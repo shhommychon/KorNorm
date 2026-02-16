@@ -1,7 +1,12 @@
 ### custom gitignore ###
 
+# AI coding assistant setting files
+.cursorignore
+.geminiignore
+GEMINI.md
 
-
+# Git submodules
+.gitmodules
 
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,venv,jupyternotebooks,visualstudiocode,linux,macos,windows
