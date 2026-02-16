@@ -1,1 +1,139 @@
 .geminiignore
+
+__pycache__/
+
+# [submodule "python-jamo"]
+python-jamo/.git
+python-jamo/.github
+python-jamo/tests
+python-jamo/.gitignore
+python-jamo/LICENSE
+
+# [submodule "KoG2P"]
+KoG2P/.git
+KoG2P/LICENSE.md
+
+# [submodule "g2pK"]
+g2pK/.git
+g2pK/.gitignore
+g2pK/LICENSE
+
+# [submodule "g2pkk"]
+g2pkk/.git
+g2pkk/.gitignore
+g2pkk/LICENSE
+
+# [submodule "g2pk2"]
+g2pk2/.git
+g2pk2/.gitignore
+g2pk2/LICENSE
+
+# [submodule "SMART-G2P"]
+SMART-G2P/.git
+g2pk2/LICENSE
+
+# [submodule "pecab"]
+pecab/.git
+pecab/.github
+pecab/.gitignore
+pecab/LICENSE
+
+# [submodule "twitter-korean-text"]
+twitter-korean-text/.git
+twitter-korean-text/.gitignore
+twitter-korean-text/CONTRIBUTING.md
+twitter-korean-text/LICENSE
+
+# [submodule "open-korean-text"]
+open-korean-text/.git
+open-korean-text/.gitignore
+open-korean-text/CONTRIBUTING.md
+open-korean-text/LICENSE
+
+# [submodule "cleaner_carpedm20_tacotron"]
+cleaner_carpedm20_tacotron/*
+!cleaner_carpedm20_tacotron/text/
+cleaner_meimk11_vits/text/__pycache__/
+
+# [submodule "cleaner_hash2430_pitchtron"]
+cleaner_hash2430_pitchtron/*
+!cleaner_hash2430_pitchtron/text/
+cleaner_hash2430_pitchtron/text/__pycache__/
+cleaner_hash2430_pitchtron/text/LICENSE
+
+# [submodule "cleaner_sooftware_tacotron2"]
+cleaner_sooftware_tacotron2/*
+!cleaner_sooftware_tacotron2/text/
+cleaner_sooftware_tacotron2/text/__pycache__/
+
+# [submodule "cleaner_jyshin0926_tacotron2"]
+cleaner_jyshin0926_tacotron2/*
+!cleaner_jyshin0926_tacotron2/Tacotron2_GriffinLim_TTS/text/
+cleaner_jyshin0926_tacotron2/Tacotron2_GriffinLim_TTS/text/__pycache__/
+
+# [submodule "cleaner_esoyeon_tacotron2"]
+cleaner_esoyeon_tacotron2/*
+!cleaner_esoyeon_tacotron2/Tacotron2_GriffinLim_TTS/text/
+cleaner_esoyeon_tacotron2/Tacotron2_GriffinLim_TTS/text/__pycache__/
+!cleaner_esoyeon_tacotron2/Tacotron2-Wavenet-Korean-TTS/text/
+cleaner_esoyeon_tacotron2/Tacotron2-Wavenet-Korean-TTS/text/__pycache__/
+
+# [submodule "cleaner_hccho2_tacotron2"]
+cleaner_hccho2_tacotron2/*
+!cleaner_hccho2_tacotron2/text/
+cleaner_hccho2_tacotron2/text/__pycache__/
+
+# [submodule "cleaner_ssumin6_fastspeech"]
+cleaner_ssumin6_fastspeech/*
+!cleaner_ssumin6_fastspeech/text/
+cleaner_ssumin6_fastspeech/text/__pycache__/
+
+# [submodule "cleaner_jeromeryu_fastpitch"]
+cleaner_jeromeryu_fastpitch/*
+!cleaner_jeromeryu_fastpitch/text/
+cleaner_jeromeryu_fastpitch/text/__pycache__/
+
+# [submodule "cleaner_hgudllab_fastspeech2"]
+cleaner_hgudllab_fastspeech2/*
+!cleaner_hgudllab_fastspeech2/text/
+cleaner_hgudllab_fastspeech2/text/__pycache__/
+
+# [submodule "cleaner_jhwanflow_fastspeech2"]
+cleaner_jhwanflow_fastspeech2/*
+!cleaner_jhwanflow_fastspeech2/text/
+cleaner_jhwanflow_fastspeech2/text/__pycache__/
+
+# [submodule "cleaner_keonlee9420_fastspeech2"]
+cleaner_keonlee9420_fastspeech2/*
+!cleaner_keonlee9420_fastspeech2/text/
+cleaner_keonlee9420_fastspeech2/text/__pycache__/
+
+# [submodule "cleaner_meimk11_vits"]
+cleaner_meimk11_vits/*
+!cleaner_meimk11_vits/text/
+cleaner_meimk11_vits/text/__pycache__/
+cleaner_meimk11_vits/text/korean/__pycache__/
+cleaner_meimk11_vits/text/korean/SMARTG2P/
+
+# [submodule "cleaner_ttop32_coqui"]
+cleaner_ttop32_coqui/*
+!cleaner_ttop32_coqui/korean.py
+
+# [submodule "cleaner_jwj7140_bertvits2"]
+cleaner_jwj7140_bertvits2/
+!cleaner_jwj7140_bertvits2/text/
+cleaner_jwj7140_bertvits2/text/__pycache__/
+
+# [submodule "cleaner_orimuchim_mbistftvits"]
+cleaner_orimuchim_mbistftvits/
+!cleaner_orimuchim_mbistftvits/text/
+cleaner_orimuchim_mbistftvits/text/__pycache__/
+
+# [submodule "TTS"]
+TTS/*
+
+# [submodule "GPT-SoVITS"]
+GPT-SoVITS/*
+
+# [submodule "NeMo-text-processing"]
+NeMo-text-processing/*
