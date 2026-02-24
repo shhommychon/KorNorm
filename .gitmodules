@@ -31,51 +31,24 @@
 [submodule "cleaner_hash2430_pitchtron"]
 	path = cleaner_hash2430_pitchtron
 	url = git@github.com:hash2430/pitchtron.git
-[submodule "cleaner_sooftware_tacotron2"]
-	path = cleaner_sooftware_tacotron2
-	url = git@github.com:sooftware/taKotron2.git
 [submodule "cleaner_jyshin0926_tacotron2"]
 	path = cleaner_jyshin0926_tacotron2
 	url = git@github.com:jyshin0926/KoreanTTS.git
-[submodule "cleaner_esoyeon_tacotron2"]
-	path = cleaner_esoyeon_tacotron2
-	url = git@github.com:esoyeon/KoreanTTS.git
-[submodule "cleaner_hccho2_tacotron2"]
-	path = cleaner_hccho2_tacotron2
-	url = git@github.com:hccho2/Tacotron2-Wavenet-Korean-TTS.git
-[submodule "cleaner_ssumin6_fastspeech"]
-	path = cleaner_ssumin6_fastspeech
-	url = git@github.com:ssumin6/Korean-TTS-Server.git
-[submodule "cleaner_jeromeryu_fastpitch"]
-	path = cleaner_jeromeryu_fastpitch
-	url = git@github.com:jeromeryu/FastPitch_Korean.git
-[submodule "cleaner_hgudllab_fastspeech2"]
-	path = cleaner_hgudllab_fastspeech2
-	url = git@github.com:HGU-DLLAB/Korean-FastSpeech2-Pytorch.git
-[submodule "cleaner_jhwanflow_fastspeech2"]
-	path = cleaner_jhwanflow_fastspeech2
-	url = git@github.com:jhwanflow/Fastspeech2-Korean.git
 [submodule "cleaner_keonlee9420_fastspeech2"]
 	path = cleaner_keonlee9420_fastspeech2
 	url = git@github.com:keonlee9420/Expressive-FastSpeech2.git
-[submodule "cleaner_meimk11_vits"]
-	path = cleaner_meimk11_vits
-	url = git@github.com:MEI-mk11/vits_korean.git
-[submodule "cleaner_ttop32_coqui"]
-	path = cleaner_ttop32_coqui
-	url = git@github.com:ttop32/coqui_tts_korea.git
 [submodule "cleaner_jwj7140_bertvits2"]
 	path = cleaner_jwj7140_bertvits2
 	url = git@github.com:jwj7140/Bert-VITS2-Korean.git
 [submodule "cleaner_orimuchim_mbistftvits"]
 	path = cleaner_orimuchim_mbistftvits
 	url = git@github.com:ORI-Muchim/MB-iSTFT-VITS-Korean.git
-[submodule "TTS"]
-	path = TTS
-	url = git@github.com:coqui-ai/TTS.git
 [submodule "GPT-SoVITS"]
 	path = GPT-SoVITS
 	url = git@github.com:RVC-Boss/GPT-SoVITS.git
+[submodule "zeroth"]
+	path = zeroth
+	url = git@github.com:goodatlas/zeroth.git
 [submodule "NeMo-text-processing"]
 	path = NeMo-text-processing
 	url = git@github.com:NVIDIA/NeMo-text-processing.git

@@ -25,19 +25,9 @@ I'll build this by gathering code from various gigachads online and shoving them
 * 유명한 한국어 TTS 클리너 함수들
   - [carpedm20/multi-speaker-tacotron-tensorflow](https://github.com/carpedm20/multi-speaker-tacotron-tensorflow/tree/master/text) : [前 OpenAI 김태훈](https://carpedm30.notion.site/me)님 한국어 tacotron 전처리 함수
   - [hash2430/pitchtron](https://github.com/hash2430/pitchtron/blob/hard/text/korean.py) : [정성희](https://jsh-tts.tistory.com/)님 한국어 pitchtron 전처리 함수
-  - [sooftware/taKotron2](https://github.com/sooftware/taKotron2/blob/master/text/__init__.py) : [TUNiB 김수환](https://sooftware.io/)님 한국어 tacotron2 전처리 함수
-  - [jyshin0926/KoreanTTS](https://github.com/jyshin0926/KoreanTTS/blob/master/Tacotron2_GriffinLim_TTS/text/__init__.py) : [서울대 신재영](https://github.com/jyshin0926)님 한국어 tacotron2 전처리 함수
-  - [esoyeon/KoreanTTS](https://github.com/esoyeon/KoreanTTS/tree/main/Tacotron2-Wavenet-Korean-TTS/text) : [이소연](https://github.com/esoyeon)님 한국어 tacotron2 전처리 함수
-  - [hccho2/Tacotron2-Wavenet-Korean-TTS](https://github.com/hccho2/Tacotron2-Wavenet-Korean-TTS/blob/master/text/korean.py) : [조희철](https://github.com/hccho2)님 한국어 Tacotron2+WaveNet 전처리 함수
-  - [ssumin6/Korean-TTS-Server](https://github.com/ssumin6/Korean-TTS-Server/blob/master/text/korean.py) : [LINE+ 신수민](https://ssumin6.github.io/)님 한국어 fastspeech 전처리 함수
-  - [jeromeryu/FastPitch_Korean](https://github.com/jeromeryu/FastPitch_Korean/blob/master/text/korean.py) : [류지엽](https://github.com/jeromeryu)님 한국어 FastPitch 전처리 함수
-  - [HGU-DLLAB/Korean-FastSpeech2-Pytorch](https://github.com/HGU-DLLAB/Korean-FastSpeech2-Pytorch/blob/master/text/korean.py) : [한동대 DL랩](http://deeplearning.handong.edu/) 한국어 FastSpeech2 전처리 함수
-  - [jhwanflow/Fastspeech2-Korean](https://github.com/jhwanflow/Fastspeech2-Korean/blob/master/text/korean.py) : [삼일회계 이정환](https://github.com/jhwanflow)님 한국어 FastSpeech2 전처리 함수
   - [keonlee9420/Expressive-FastSpeech2](https://github.com/keonlee9420/Expressive-FastSpeech2/blob/main/text/korean.py) : [크래프톤 이건](https://sites.google.com/view/keonlee9420)님 한국어 FastSpeech2 전처리 함수
-  - [MEI-mk11/vits_korean](https://github.com/MEI-mk11/vits_korean/tree/main/text/korean) : [메이](https://github.com/MEI-mk11)님 한국어 FastSpeech2 전처리 함수
-  - [ttop32/coqui_tts_korea](https://github.com/ttop32/coqui_tts_korea/blob/main/korean.py) : [다나와 다니엘](https://github.com/ttop32)님 한국어 전처리 함수
   - [jwj7140/Bert-VITS2-Korean](https://github.com/jwj7140/Bert-VITS2-Korean/blob/main/text/korean.py) : [경기대 정우준](https://github.com/jwj7140)님 한국어 Bert-VITS2 전처리 함수
   - [ORI-Muchim/MB-iSTFT-VITS-Korean](https://github.com/ORI-Muchim/MB-iSTFT-VITS-Korean/blob/main/text/korean.py) : [단국대 조민형](https://ori-muchim.github.io/)님 한국어 MB-iSTFT-VITS 전처리 함수
-  - [coqui-ai/TTS](https://github.com/coqui-ai/TTS/tree/dev/TTS/tts/utils/text/korean) : Coqui TTS (2022) 한국어 전처리 함수
   - [GPT-SoVITS](https://github.com/RVC-Boss/GPT-SoVITS/blob/main/GPT_SoVITS/text/korean.py) : GPT-SoVITS (2024) 한국어 전처리 함수
+* [zeroth](https://github.com/goodatlas/zeroth) : 근본 한국어 음성 인식 프로젝트
 * [WFST @NeMo-text-processing](https://github.com/NVIDIA/NeMo-text-processing/blob/main/tutorials/WFST_Tutorial.ipynb) : `pynini` 및 `WFST(가중 유한 상태 트랜스듀서, Weighted Finite-State Transducer)`를 이용한 규칙 기반, 결정론적 텍스트 전처리기
