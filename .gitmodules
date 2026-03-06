@@ -1,9 +1,6 @@
 [submodule "python-jamo"]
 	path = python-jamo
 	url = git@github.com:jdongian/python-jamo.git
-[submodule "KoG2P"]
-	path = KoG2P
-	url = git@github.com:scarletcho/KoG2P.git
 [submodule "g2pK"]
 	path = g2pK
 	url = git@github.com:Kyubyong/g2pK.git
