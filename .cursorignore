@@ -61,63 +61,10 @@ cleaner_hash2430_pitchtron/*
 cleaner_hash2430_pitchtron/text/__pycache__/
 cleaner_hash2430_pitchtron/text/LICENSE
 
-# [submodule "cleaner_sooftware_tacotron2"]
-cleaner_sooftware_tacotron2/*
-!cleaner_sooftware_tacotron2/text/
-cleaner_sooftware_tacotron2/text/__pycache__/
-
-# [submodule "cleaner_jyshin0926_tacotron2"]
-cleaner_jyshin0926_tacotron2/*
-!cleaner_jyshin0926_tacotron2/Tacotron2_GriffinLim_TTS/text/
-cleaner_jyshin0926_tacotron2/Tacotron2_GriffinLim_TTS/text/__pycache__/
-
-# [submodule "cleaner_esoyeon_tacotron2"]
-cleaner_esoyeon_tacotron2/*
-!cleaner_esoyeon_tacotron2/Tacotron2_GriffinLim_TTS/text/
-cleaner_esoyeon_tacotron2/Tacotron2_GriffinLim_TTS/text/__pycache__/
-!cleaner_esoyeon_tacotron2/Tacotron2-Wavenet-Korean-TTS/text/
-cleaner_esoyeon_tacotron2/Tacotron2-Wavenet-Korean-TTS/text/__pycache__/
-
-# [submodule "cleaner_hccho2_tacotron2"]
-cleaner_hccho2_tacotron2/*
-!cleaner_hccho2_tacotron2/text/
-cleaner_hccho2_tacotron2/text/__pycache__/
-
-# [submodule "cleaner_ssumin6_fastspeech"]
-cleaner_ssumin6_fastspeech/*
-!cleaner_ssumin6_fastspeech/text/
-cleaner_ssumin6_fastspeech/text/__pycache__/
-
-# [submodule "cleaner_jeromeryu_fastpitch"]
-cleaner_jeromeryu_fastpitch/*
-!cleaner_jeromeryu_fastpitch/text/
-cleaner_jeromeryu_fastpitch/text/__pycache__/
-
-# [submodule "cleaner_hgudllab_fastspeech2"]
-cleaner_hgudllab_fastspeech2/*
-!cleaner_hgudllab_fastspeech2/text/
-cleaner_hgudllab_fastspeech2/text/__pycache__/
-
-# [submodule "cleaner_jhwanflow_fastspeech2"]
-cleaner_jhwanflow_fastspeech2/*
-!cleaner_jhwanflow_fastspeech2/text/
-cleaner_jhwanflow_fastspeech2/text/__pycache__/
-
 # [submodule "cleaner_keonlee9420_fastspeech2"]
 cleaner_keonlee9420_fastspeech2/*
 !cleaner_keonlee9420_fastspeech2/text/
 cleaner_keonlee9420_fastspeech2/text/__pycache__/
-
-# [submodule "cleaner_meimk11_vits"]
-cleaner_meimk11_vits/*
-!cleaner_meimk11_vits/text/
-cleaner_meimk11_vits/text/__pycache__/
-cleaner_meimk11_vits/text/korean/__pycache__/
-cleaner_meimk11_vits/text/korean/SMARTG2P/
-
-# [submodule "cleaner_ttop32_coqui"]
-cleaner_ttop32_coqui/*
-!cleaner_ttop32_coqui/korean.py
 
 # [submodule "cleaner_jwj7140_bertvits2"]
 cleaner_jwj7140_bertvits2/
@@ -129,11 +76,11 @@ cleaner_orimuchim_mbistftvits/
 !cleaner_orimuchim_mbistftvits/text/
 cleaner_orimuchim_mbistftvits/text/__pycache__/
 
-# [submodule "TTS"]
-TTS/*
-
 # [submodule "GPT-SoVITS"]
 GPT-SoVITS/*
+
+# [submodule "zeroth"]
+zeroth/*
 
 # [submodule "NeMo-text-processing"]
 NeMo-text-processing/*
