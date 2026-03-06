@@ -9,10 +9,6 @@ python-jamo/tests
 python-jamo/.gitignore
 python-jamo/LICENSE
 
-# [submodule "KoG2P"]
-KoG2P/.git
-KoG2P/LICENSE.md
-
 # [submodule "g2pK"]
 g2pK/.git
 g2pK/.gitignore

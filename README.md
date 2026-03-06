@@ -13,7 +13,6 @@ I'll build this by gathering code from various gigachads online and shoving them
 * 내가 퇴사하면서 회사에 유기해놓고 왔던 내 기억 속 텍스트 정규화 라이브러리
 * [jamo](https://github.com/jdongian/python-jamo) : [조슈아 동](https://github.com/JDongian)님의 근본 자모 패키지
 * 한국어 G2P 라이브러리
-  - [scarletcho/KoG2P](https://github.com/scarletcho/KoG2P) : [텍사스대 조예진](https://github.com/scarletcho)님 KoG2P (2020년 마지막 커밋)
   - [Kyubyong/g2pK](https://github.com/Kyubyong/g2pK) : [TUNiB 박규병](https://github.com/Kyubyong)님 g2pK 원본 (2020년 마지막 커밋)
   - [harmlessman/g2pkk](https://github.com/harmlessman/g2pkk) : [무해한생물](https://drawing-thoughts.tistory.com/)님 g2pK 전체 OS 버젼 (2022년 마지막 커밋)
   - [tenebo/g2pk2](https://github.com/tenebo/g2pk2) : [이인표](https://github.com/tenebo)님 g2pK 최신본 (2023년 마지막 커밋)
