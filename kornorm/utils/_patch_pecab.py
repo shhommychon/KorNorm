@@ -1,5 +1,6 @@
 import os
-import pandas as pd
+from pathlib import Path
+
 import pyarrow as pa
 import pecab
 from pecab._datrie import DoubleArrayTrie
@@ -986,45 +987,78 @@ def patch_pecab_dictionary_if_needed():
     words_path = os.path.join(pecab_resource_dir, "words.arrow")
     arrays_path = os.path.join(pecab_resource_dir, "arrays.arrow")
 
-    # 2. 기존 pyarrow 테이블 읽기
-    words_table = pa.ipc.RecordBatchFileReader(pa.memory_map(words_path, 'r')).read_all()
-    df = words_table.to_pandas()
+    # 2. PyArrow를 사용하여 원본 사전을 읽어옴
+    with pa.memory_map(words_path, 'r') as source:
+        words_table = pa.ipc.open_file(source).read_all()
 
-    # 3. 문제가 되는 형태소 토큰들 필터링
-    df_filtered = df[~df["surface"].isin(MORPHEMES_TO_EXCLUDE)]
+    col_names = words_table.column_names
+    num_rows = words_table.num_rows
+    columns_data = {name: words_table.column(name).to_pylist() for name in col_names}
 
-    # 4. DAT 구조 복원
+    # 3. 문제가 되는 형태소 토큰들 필터링 및 DAT 구조 복원
     data = {}
-    for entry in df_filtered.to_dict("records"):
-        surface = entry["surface"]
+    for i in range(num_rows):
+        surface = columns_data["surface"][i]
+        
+        # 제외 대상 필터링
+        if surface in MORPHEMES_TO_EXCLUDE:
+            continue
+            
+        # 표층어(surface)를 포함한 전체 속성을 딕셔너리로 구성하여 데이터 정합성 유지
+        entry_dict = {k: str(columns_data[k][i]) for k in col_names}
+        
         if surface not in data:
-            data[surface] = {k: str(v) for k, v in entry.items() if k != "surface"}
+            data[surface] = entry_dict
         else:
-            for k, v in entry.items():
-                if k != "surface":
+            # 중복된 표층어에 대한 속성 병합 (surface 제외)
+            for k, v in entry_dict.items():
+                if k != 'surface':
                     data[surface][k] += f"|{v}"
 
-    # 5. DAT 재빌드
+    # 4. DAT 재빌드
     trie = DoubleArrayTrie(data)
 
-    new_words = pd.DataFrame.from_records(list(trie._value))
-    new_words = pa.Table.from_pandas(new_words)
+    # 5. 재빌드된 DAT를 PyArrow Table(Columnar 포맷)로 변환
+    # trie._value의 딕셔너리 리스트 구조를 각 컬럼별 리스트로 재구성합니다.
+    reconstructed_cols = {}
+    for prop in col_names:
+        reconstructed_cols[prop] = [row[prop] for row in trie._value]
 
-    new_arrays = {"base": trie._base, "check": trie._check}
-    new_arrays = pd.DataFrame.from_dict(new_arrays)
-    new_arrays = pa.Table.from_pandas(new_arrays)
+    new_words_table = pa.Table.from_pydict(reconstructed_cols)
+    new_arrays_table = pa.Table.from_pydict({
+        "base": trie._base, 
+        "check": trie._check
+    })
 
     # 6. 원본 덮어쓰기
     with pa.OSFile(words_path, "wb") as sink:
-        with pa.RecordBatchFileWriter(sink, new_words.schema) as writer:
-            writer.write_table(new_words)
+        with pa.RecordBatchFileWriter(sink, new_words_table.schema) as writer:
+            writer.write_table(new_words_table)
 
     with pa.OSFile(arrays_path, "wb") as sink:
-        with pa.RecordBatchFileWriter(sink, new_arrays.schema) as writer:
-            writer.write_table(new_arrays)
+        with pa.RecordBatchFileWriter(sink, new_arrays_table.schema) as writer:
+            writer.write_table(new_arrays_table)
             
     # 7. 마커 파일 생성 (이 패치 과정이 여러번 돌지 않도록 방지)
     with open(marker_path, 'w', encoding="utf-8") as f:
         f.write("patched by kornorm")
+    
+    # 8. pip uninstall 시 함께 삭제되도록 pecab의 RECORD 파일 수정
+    try:
+        pecab_pkg_dir = Path(pecab.__file__).parent
+        site_packages_dir = pecab_pkg_dir.parent
+        
+        # pecab-X.X.X.dist-info 폴더 찾기
+        for dist_info in site_packages_dir.glob("pecab-*.dist-info"):
+            record_path = dist_info / "RECORD"
+            if record_path.exists():
+                # RECORD 파일은 site-packages 기준 상대 경로를 사용
+                # hash와 size는 빈칸으로 두어도 삭제하는 데는 문제 없음
+                relative_marker_path = f"pecab/_resources/{MARKER_FILE}"
+                with open(record_path, "a", encoding="utf-8", newline="") as f:
+                    f.write(f"{relative_marker_path},,\n")
+                break
+    except Exception as e:
+        print(f"KorNorm: pecab RECORD 파일 업데이트 실패 (무시됨) - {e}")
         
     print("KorNorm: pecab 형태소 사전 패치 작업을 완료했습니다.")

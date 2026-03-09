@@ -3,12 +3,12 @@
 # 정규식을 지양하고 O(1) 탐색 속도의 Arrow 사전과 2D LUT를 활용하는 하이브리드 음운 변동 엔진입니다.
 
 import os
-from dataclasses import dataclass
 from typing import List, Literal
 
 from kornorm.utils._patch_pecab import patch_pecab_dictionary_if_needed
 from kornorm.utils.jamo import decompose, join_jamos, to_compat_jamo
 
+from kornorm.phonology.common import MorphToken
 from kornorm.phonology.apply_lut import apply_phonology_lut
 from kornorm.phonology.chapter2 import (
     norm5_p1, norm5_p2, norm5_p3, norm5_p4_1, norm5_p4_2,
@@ -40,18 +40,6 @@ def apply_phonology(text: str, output_format: str = "positional") -> str:
     return global_phonology_engine(text, output_format=output_format)
 
 
-@dataclass
-class MorphToken:
-    """형태소 단위의 데이터와 메타정보를 담는 순수 메모리 객체"""
-    surface: str
-    pos: str
-    start_offset: int
-    end_offset: int
-    jamo_str: str
-    is_hanja: bool = False
-    compound_structure: str = ''
-
-
 class PhonologicProcessor:
     """
     KorNorm 메인 음운 변동 엔진
@@ -79,7 +67,7 @@ class PhonologicProcessor:
         """
         Arrow IPC를 로드하여 DoubleArrayTrie 구조로 복원합니다.
 
-        PyArrow의 Native 리스트 변환(to_pylist)을 사용하여 Zero-copy에 가까운 빠른 메모리 로딩을 수행합니다.
+        PyArrow Native 구조를 유지하여 Zero-copy 로딩을 수행하며, 리스트 변환 과정을 생략하여 메모리 효율을 극대화합니다.
         """
         import pyarrow as pa
         from pecab._datrie import DoubleArrayTrie
@@ -88,18 +76,29 @@ class PhonologicProcessor:
         arrays_path = os.path.join(os.path.dirname(__file__), "_resources", "stdict_arrays.arrow")
 
         if os.path.exists(words_path) and os.path.exists(arrays_path):
-            with pa.memory_map(words_path, 'r') as source_w, pa.memory_map(arrays_path, 'r') as source_a:
-                words_table = pa.ipc.open_file(source_w).read_all()
-                arrays_table = pa.ipc.open_file(source_a).read_all()
+            # 메모리 맵이 닫히지 않도록 인스턴스 변수로 유지하여 Zero-copy 참조를 보장
+            self._source_w = pa.memory_map(words_path, 'r')
+            self._source_a = pa.memory_map(arrays_path, 'r')
+            
+            words_table = pa.ipc.open_file(self._source_w).read_all()
+            arrays_table = pa.ipc.open_file(self._source_a).read_all()
 
-                # DoubleArrayTrie 객체 복원
-                self.stdict_trie = DoubleArrayTrie({})
+            # DoubleArrayTrie 객체 복원
+            self.stdict_trie = DoubleArrayTrie({})
 
-                # RecordBatch를 Python dict list로 직행 (Zero-overhead 접근)
-                self.stdict_trie._value = words_table.to_pylist()
+            # PyArrow Array 구조를 그대로 유지하여 메모리 복사를 방지
+            # pecab 내부 로직의 .as_py() 호출과 호환됨
+            self.stdict_trie._value = {
+                col_name: words_table.column(col_name)
+                for col_name in words_table.column_names
+            }
+            
+            # pecab 내부 인터페이스에 맞게 value names 업데이트
+            self.stdict_trie._value_names = tuple(words_table.column_names)
 
-                self.stdict_trie._base = arrays_table["base"].to_pylist()
-                self.stdict_trie._check = arrays_table["check"].to_pylist()
+            # base/check 배열 또한 Native Array 상태로 유지
+            self.stdict_trie._base = arrays_table.column("base")
+            self.stdict_trie._check = arrays_table.column("check")
 
     def _load_2d_lut(self):
         """2D LUT를 메모리에 바인딩합니다."""
@@ -123,10 +122,14 @@ class PhonologicProcessor:
             comp_str = ''
 
             # 사전 조회를 통한 메타데이터 확보
-            if self.stdict_trie is not None and term in self.stdict_trie:
-                dict_info = self.stdict_trie[term]
-                is_h = (dict_info.get("is_hanja") == '1')
-                comp_str = dict_info.get("compound_structure", "")
+            if self.stdict_trie is not None:
+                try:
+                    dict_info = self.stdict_trie[term]
+                    if isinstance(dict_info, dict):
+                        is_h = (dict_info.get("is_hanja") == '1')
+                        comp_str = dict_info.get("compound_structure", '')
+                except KeyError:
+                    pass
 
             token = MorphToken(
                 surface=term,

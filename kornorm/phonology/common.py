@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from kornorm.utils.jamo import (
     O_GIYEOK, O_DIGEUT, O_BIEUP, O_SIOT, O_JIEUT,
     O_SSANGGIYEOK, O_SSANGDIGEUT, O_SSANGBIEUP, O_SSANGSIOT, O_SSANGJIEUT,
@@ -35,3 +37,15 @@ SUBSTANTIVE_TAGS = (
     "SL",   # 외국어/알파벳
     "SH",   # 한자
 )
+
+@dataclass
+class MorphToken:
+    """형태소 단위의 데이터와 메타정보를 담는 순수 메모리 객체"""
+    surface: str
+    pos: str
+    start_offset: int
+    end_offset: int
+    jamo_str: str
+    is_hanja: bool = False
+    compound_structure: str = ''
+    

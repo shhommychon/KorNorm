@@ -4,7 +4,7 @@
 #   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a392
 
 from typing import List
-from kornorm.phonology.engine import MorphToken
+from kornorm.phonology.common import MorphToken
 from kornorm.phonology.common import FORTIS_MAPPING
 
 from kornorm.utils.jamo import (

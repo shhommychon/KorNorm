@@ -4,7 +4,7 @@
 #   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a388
 
 from typing import List, Tuple
-from kornorm.phonology.engine import MorphToken
+from kornorm.phonology.common import MorphToken
 
 from kornorm.utils.jamo import (
     O_NIEUN, O_RIEUL, O_SIOT, O_SSANGSIOT, O_IEUNG,

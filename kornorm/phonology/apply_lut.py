@@ -5,7 +5,7 @@
 # 어떻게 발현되는지를 결정론적으로 처리합니다.
 
 from typing import List
-from kornorm.phonology.engine import MorphToken
+from kornorm.phonology.common import MorphToken
 
 from kornorm.utils.jamo import (
     O_GIYEOK, O_SSANGGIYEOK, O_NIEUN, O_DIGEUT, O_SSANGDIGEUT,
@@ -499,7 +499,7 @@ def apply_phonology_lut(
     """
     2D LUT(PHONOLOGY_LUT)를 기반으로 O(1) 복잡도의 인접 종성-초성 간 음운 변동을 수행합니다.
 
-    본 엔진의 핵심인 LUT 아키텍처는 박규병의 g2pK(2020) 및 그 근간이 된 Lucas Jo의 zeroth(2017) 프로젝트에서
+    본 엔진의 핵심인 LUT 아키텍처는 박규병 님의 `g2pK` 및 Lucas Jo, et al.의 `zeroth` 프로젝트에서
     증명된 "연쇄 동화의 단일화" 철학을 계승합니다. 정규식 기반 엔진에서는 제19항(ㄹ의 비음화)을 선행하고
     제18항(역행 비음화)을 후행하는 등 규칙 간의 엄격한 순서 제어가 필수적이었습니다.
     (예: "법리" -> 19항 적용 [법니] -> 18항 적용 [범니]).
@@ -538,18 +538,39 @@ def apply_phonology_lut(
         if curr_token.pos == "SP":
             continue
 
+        # 1. 단일 토큰 내부의 음운 변동 처리
+        # 형태소 분석기가 쪼개지 않은 복합어나 미분석어 내부의 음절 경계에서 변동을 수행합니다.
+        if len(curr_token.jamo_str) >= 6:  # 2음절(6자모) 이상인 경우에만 내부 경계 존재
+            jamo_list = list(curr_token.jamo_str)
+            # 초-중-종(3단위)씩 이동하며 현재 음절 종성과 다음 음절 초성 비교
+            for j in range(0, len(jamo_list) - 3, 3):
+                intra_jong = jamo_list[j + 2]
+                intra_cho = jamo_list[j + 3]
+
+                if intra_jong == C_NONE:
+                    continue
+
+                rule_info = PHONOLOGY_LUT.get(intra_jong, {}).get(intra_cho)
+                if rule_info:
+                    new_jong, new_cho, _ = rule_info
+                    jamo_list[j + 2] = new_jong
+                    jamo_list[j + 3] = new_cho
+            
+            curr_token.jamo_str = "".join(jamo_list)
+
+        # 2. 인접 토큰 간의 음운 변동 처리 (Inter-token)
         curr_jong = curr_token.jamo_str[-1]
 
         # 종성이 없으면(C_NONE) 충돌할 일도 없으니 패스
         if curr_jong == C_NONE:
             continue
 
-        # 1. 다음 토큰의 인덱스 탐색
+        # 2-1. 다음 토큰의 인덱스 및 초성 탐색
         next_idx = i + 1
 
         if next_idx < len(tokens) and tokens[next_idx].pos == "SP":
             if not cross_word_boundary:
-                # 백 경계를 넘지 않도록 설정된 경우, 어말(EOW)로 처리
+                # 공백 경계를 넘지 않도록 설정된 경우, 어말(EOW)로 처리
                 next_cho = O_EOW
             else:
                 # 공백을 건너뛰어 다음 형태소 탐색
@@ -565,21 +586,18 @@ def apply_phonology_lut(
             # 공백 없이 인접한 토큰인 경우
             next_cho = tokens[next_idx].jamo_str[0]
 
-        # 2. 2D LUT 매트릭스 조회
-        # PHONOLOGY_LUT 구조: { Coda: { Onset: (New_Coda, New_Onset, Rule_ID) } }
+        # 2-2. 2D LUT 매트릭스 조회 및 적용
         rule_info = PHONOLOGY_LUT.get(curr_jong, {}).get(next_cho)
 
         if rule_info:
             new_jong, new_cho, rule_id = rule_info
 
-            # 3. 선행 토큰의 종성 업데이트 (C_NONE으로 탈락되는 경우 포함)
+            # 선행 토큰의 종성 업데이트
             curr_token.jamo_str = curr_token.jamo_str[:-1] + new_jong
 
-            # 4. 후행 토큰의 초성 업데이트 (어말 O_EOW 상태가 아닐 때만 적용)
+            # 후행 토큰의 초성 업데이트 (어말 O_EOW 상태가 아닐 때만 적용)
             if next_cho != O_EOW and new_cho != O_EOW:
                 next_token = tokens[next_idx]
                 next_token.jamo_str = new_cho + next_token.jamo_str[1:]
-
-            # TODO: rule_id 로깅이 필요하다면 여기서 처리
 
     return tokens
