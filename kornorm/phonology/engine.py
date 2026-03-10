@@ -177,8 +177,8 @@ class PhonologicProcessor:
         tokens = norm5_p1(tokens)
         tokens = norm5_p2(tokens)
         tokens = norm5_p3(tokens)
-        tokens = norm5_p4_1(tokens)
         tokens = norm5_p4_2(tokens)
+        tokens = norm5_p4_1(tokens)
         tokens = norm22(tokens)
         tokens = norm22_a(tokens)
 

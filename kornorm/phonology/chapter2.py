@@ -247,6 +247,7 @@ def norm5_p4_1(tokens: List[MorphToken]) -> List[MorphToken]:
     """
     for token_idx, token in enumerate(tokens):
         if token.pos.startswith('S'): continue # 공백(SP), 영문(SL), 숫자(SN), 기호(SY) 등 자모 치환에서 제외
+        if token.pos.startswith('J'): continue # 조사 또한 5.4.2항에서 처리해야 하므로 제외
 
         # 단어(어절)의 첫 번째 형태소이면서, 형태소 내의 첫 번째 글자이면 첫음절임.
         # 이를 정확히 하려면 앞 토큰이 공백(SP)인지 등을 확인해야 함.
