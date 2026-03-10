@@ -208,25 +208,25 @@ PHONOLOGY_LUT = {
         O_CHIEUT: (C_BIEUP, O_CHIEUT, "9항"),
         O_SSANGJIEUT: (C_BIEUP, O_SSANGJIEUT, "9항"),
         O_HIEUT: (C_NONE, O_PIEUP, "Kyubyong/g2pK"),
-        O_RIEUL: (C_MIEUM, O_NIEUN, "9항|18항"), # 원본 CSV의 'ᆫ\1ᄂ' 오타를 음운 규칙에 맞게 'ᆷ\1ᄂ' 로 교정 반영
+        O_RIEUL: (C_MIEUM, O_NIEUN, "9항|18항"),                    # g2pK 원본 정규식("ᆫ\1ᄂ(9/18)") 수정. 9항 선적용 후("ᆸ\1ᄂ") 18항을 거쳐 최종적으로 "ᆷ\1ᄂ"가 되는 논리로 다이렉트 매핑.
         O_EOW: (C_BIEUP, O_EOW, "9항"),
     },
     C_BIEUP_SIOT: {
         O_GIYEOK: (C_BIEUP, O_SSANGGIYEOK, "10항|23항"),
-        O_KIEUK: (C_BIEUP, O_KIEUK, "10항"),
+        O_KIEUK: (C_BIEUP, O_KIEUK, "10항"),                        # g2pK 원본 정규식("ᆸ\1ᄑ") 수정. 10항에 기반한 "ᆸ\1ᄏ(10)" 정규식과 동일한 논리를 적용.
         O_SSANGGIYEOK: (C_BIEUP, O_SSANGGIYEOK, "10항"),
         O_NIEUN: (C_MIEUM, O_NIEUN, "10항|18항"),
         O_DIGEUT: (C_BIEUP, O_SSANGDIGEUT, "10항|23항"),
-        O_TIEUT: (C_BIEUP, O_TIEUT, "10항"),
+        O_TIEUT: (C_BIEUP, O_TIEUT, "10항"),                        # g2pK 원본 누락 케이스 보완. 10항에 기반한 "ᆸ\1ᄐ(10)" 정규식과 동일한 논리를 적용.
         O_SSANGDIGEUT: (C_BIEUP, O_SSANGDIGEUT, "10항"),
         O_MIEUM: (C_MIEUM, O_MIEUM, "10항|18항"),
         O_BIEUP: (C_BIEUP, O_SSANGBIEUP, "10항|23항"),
-        O_PIEUP: (C_BIEUP, O_PIEUP, "Kyubyong/g2pK"),
+        O_PIEUP: (C_BIEUP, O_PIEUP, "10항"),                        # g2pK 원본 누락 케이스 보완. 10항에 기반한 "ᆸ\1ᄑ(10)" 정규식과 동일한 논리를 적용.
         O_SSANGBIEUP: (C_BIEUP, O_SSANGBIEUP, "10항"),
         O_SIOT: (C_BIEUP, O_SSANGSIOT, "10항|23항"),
         O_SSANGSIOT: (C_BIEUP, O_SSANGSIOT, "10항"),
         O_JIEUT: (C_BIEUP, O_SSANGJIEUT, "10항|23항"),
-        O_CHIEUT: (C_BIEUP, O_CHIEUT, "10항"),
+        O_CHIEUT: (C_BIEUP, O_CHIEUT, "10항"),                      # g2pK 원본 정규식("ᆸ\1ᄎ(1ᄐ(10)") 수정. 원본 엔진의 괄호 파싱 로직에 의해 "ᆸ\1ᄎ"로 작동하던 것을 계승하여 매핑.
         O_SSANGJIEUT: (C_BIEUP, O_SSANGJIEUT, "10항"),
         O_HIEUT: (C_BIEUP, O_PIEUP, "10항"),
         O_RIEUL: (C_MIEUM, O_NIEUN, "10항|19항|18항"),
@@ -242,7 +242,7 @@ PHONOLOGY_LUT = {
         O_SSANGDIGEUT: (C_DIGEUT, O_SSANGDIGEUT, "9항"),
         O_MIEUM: (C_NIEUN, O_MIEUM, "9항|18항"),
         O_BIEUP: (C_DIGEUT, O_SSANGBIEUP, "9항|23항"),
-        O_PIEUP: (C_DIGEUT, O_PIEUP, "9항"),
+        O_PIEUP: (C_DIGEUT, O_PIEUP, "9항|tenebo/g2pk2"),           # g2pK 원본 정규식("ᆮ1ᄑ(9)") 수정. 백레퍼런스 누락을 수정한 tenebo/g2pk2@7140979의 "ᆮ\1ᄑ(9)" 패치 논리를 반영.
         O_SSANGBIEUP: (C_DIGEUT, O_SSANGBIEUP, "9항"),
         O_SIOT: (C_DIGEUT, O_SSANGSIOT, "9항|23항"),
         O_SSANGSIOT: (C_DIGEUT, O_SSANGSIOT, "9항"),
@@ -345,15 +345,15 @@ PHONOLOGY_LUT = {
     },
     C_RIEUL_GIYEOK: {
         O_GIYEOK: (C_GIYEOK, O_SSANGGIYEOK, "11항|23항"),
-        O_KIEUK: (C_GIYEOK, O_KIEUK, "11항"),
+        O_KIEUK: (C_GIYEOK, O_KIEUK, "11항"),                       # g2pK 원본 정규식("1)") 수정. tenebo/g2pk2@7140979는 이를 "ᆯ\1ᄏ(12)"로 패치하였으나, KorNorm에서는 11항에 기반한 "ᆨ\1ᄏ(11)" 정규식과 동일한 논리를 적용.
         O_SSANGGIYEOK: (C_GIYEOK, O_SSANGGIYEOK, "11항"),
         O_NIEUN: (C_IEUNG, O_NIEUN, "11항|18항"),
         O_DIGEUT: (C_GIYEOK, O_SSANGDIGEUT, "11항|23항"),
-        O_TIEUT: (C_GIYEOK, O_TIEUT, "11항"),
+        O_TIEUT: (C_GIYEOK, O_TIEUT, "11항"),                       # g2pK 원본 정규식("ᆨ\1ᄑ(11)") 수정. 11항에 기반한 "ᆨ\1ᄐ(11)" 정규식과 동일한 논리를 적용.
         O_SSANGDIGEUT: (C_GIYEOK, O_SSANGDIGEUT, "11항"),
         O_MIEUM: (C_IEUNG, O_MIEUM, "11항|18항"),
         O_BIEUP: (C_GIYEOK, O_SSANGBIEUP, "11항|23항"),
-        O_PIEUP: (C_GIYEOK, O_PIEUP, "11항"),
+        O_PIEUP: (C_GIYEOK, O_PIEUP, "11항"),                       # g2pK 원본 누락 케이스 보완. 11항에 기반한 "ᆨ\1ᄑ(11)" 정규식과 동일한 논리를 적용.
         O_SSANGBIEUP: (C_GIYEOK, O_SSANGBIEUP, "11항"),
         O_SIOT: (C_GIYEOK, O_SSANGSIOT, "11항|23항"),
         O_SSANGSIOT: (C_GIYEOK, O_SSANGSIOT, "11항"),
@@ -408,15 +408,15 @@ PHONOLOGY_LUT = {
     },
     C_RIEUL_BIEUP: {
         O_GIYEOK: (C_RIEUL, O_SSANGGIYEOK, "10항|23항"),
-        O_KIEUK: (C_RIEUL, O_KIEUK, "10항"),
+        O_KIEUK: (C_RIEUL, O_KIEUK, "10항"),                        # g2pK 원본 정규식("ᆯ\1ᄏ(10)0)") 수정. 원본 엔진의 괄호 파싱 로직에 의해 "ᆯ\1ᄏ"로 작동하던 것을 계승하여 매핑.
         O_SSANGGIYEOK: (C_RIEUL, O_SSANGGIYEOK, "10항"),
         O_NIEUN: (C_MIEUM, O_NIEUN, "18항"),
         O_DIGEUT: (C_RIEUL, O_SSANGDIGEUT, "10항|23항"),
-        O_TIEUT: (C_RIEUL, O_TIEUT, "10항"),
+        O_TIEUT: (C_RIEUL, O_TIEUT, "10항"),                        # g2pK 원본 누락 케이스 보완. 10항에 기반한 "ᆯ\1ᄐ(10)" 정규식과 동일한 논리를 적용.
         O_SSANGDIGEUT: (C_RIEUL, O_SSANGDIGEUT, "10항"),
         O_MIEUM: (C_MIEUM, O_MIEUM, "18항"),
         O_BIEUP: (C_RIEUL, O_SSANGBIEUP, "10항|23항"),
-        O_PIEUP: (C_RIEUL, O_PIEUP, "10항"),
+        O_PIEUP: (C_RIEUL, O_PIEUP, "10항"),                        # g2pK 원본 누락 케이스 보완. 10항에 기반한 "ᆯ\1ᄑ(10)" 정규식과 동일한 논리를 적용.
         O_SSANGBIEUP: (C_RIEUL, O_SSANGBIEUP, "10항"),
         O_SIOT: (C_RIEUL, O_SSANGSIOT, "10항|23항"),
         O_SSANGSIOT: (C_RIEUL, O_SSANGSIOT, "10항"),
@@ -429,15 +429,15 @@ PHONOLOGY_LUT = {
     },
     C_RIEUL_PIEUP: {
         O_GIYEOK: (C_BIEUP, O_SSANGGIYEOK, "11항|23항"),
-        O_KIEUK: (C_BIEUP, O_KIEUK, "11항"),
+        O_KIEUK: (C_BIEUP, O_KIEUK, "11항"),                        # g2pK 원본 정규식("ᆸ\1ᆸ\1ᄑ") 수정. 11항에 기반한 "ᆸ\1ᄏ(11)" 정규식과 동일한 논리를 적용.
         O_SSANGGIYEOK: (C_BIEUP, O_SSANGGIYEOK, "11항"),
         O_NIEUN: (C_MIEUM, O_NIEUN, "18항"),
         O_DIGEUT: (C_BIEUP, O_SSANGDIGEUT, "11항|23항"),
-        O_TIEUT: (C_BIEUP, O_TIEUT, "11항"),
+        O_TIEUT: (C_BIEUP, O_TIEUT, "11항"),                        # g2pK 원본 누락 케이스 보완. 11항에 기반한 "ᆸ\1ᄐ(11)" 정규식과 동일한 논리를 적용.
         O_SSANGDIGEUT: (C_BIEUP, O_SSANGDIGEUT, "11항"),
         O_MIEUM: (C_MIEUM, O_MIEUM, "11항|18항"),
         O_BIEUP: (C_BIEUP, O_SSANGBIEUP, "11항|23항"),
-        O_PIEUP: (C_BIEUP, O_PIEUP, "11항"),
+        O_PIEUP: (C_BIEUP, O_PIEUP, "11항"),                        # g2pK 원본 누락 케이스 보완. 11항에 기반한 "ᆸ\1ᄑ(11)" 정규식과 동일한 논리를 적용.
         O_SSANGBIEUP: (C_BIEUP, O_SSANGBIEUP, "11항"),
         O_SIOT: (C_BIEUP, O_SSANGSIOT, "11항|23항"),
         O_SSANGSIOT: (C_BIEUP, O_SSANGSIOT, "11항"),
@@ -450,15 +450,15 @@ PHONOLOGY_LUT = {
     },
     C_RIEUL_SIOT: {
         O_GIYEOK: (C_RIEUL, O_SSANGGIYEOK, "10항|23항"),
-        O_KIEUK: (C_RIEUL, O_KIEUK, "10항"),
+        O_KIEUK: (C_RIEUL, O_KIEUK, "10항"),                        # g2pK 원본 정규식("ᆯ\1ᄏ(ᄑ(10)") 수정. 원본 엔진의 괄호 파싱 로직에 의해 "ᆯ\1ᄏ"로 작동하던 것을 계승하여 매핑.
         O_SSANGGIYEOK: (C_RIEUL, O_SSANGGIYEOK, "10항"),
         O_NIEUN: (C_RIEUL, O_RIEUL, "10항|20항"),
         O_DIGEUT: (C_RIEUL, O_SSANGDIGEUT, "10항|23항"),
-        O_TIEUT: (C_RIEUL, O_TIEUT, "10항"),
+        O_TIEUT: (C_RIEUL, O_TIEUT, "10항"),                        # g2pK 원본 누락 케이스 보완. 10항에 기반한 "ᆯ\1ᄐ(10)" 정규식과 동일한 논리를 적용.
         O_SSANGDIGEUT: (C_RIEUL, O_SSANGDIGEUT, "10항"),
         O_MIEUM: (C_RIEUL, O_MIEUM, "10항"),
         O_BIEUP: (C_RIEUL, O_SSANGBIEUP, "10항|23항"),
-        O_PIEUP: (C_RIEUL, O_PIEUP, "10항"),
+        O_PIEUP: (C_RIEUL, O_PIEUP, "10항"),                        # g2pK 원본 누락 케이스 보완. 10항에 기반한 "ᆯ\1ᄑ(10)" 정규식과 동일한 논리를 적용.
         O_SSANGBIEUP: (C_RIEUL, O_SSANGBIEUP, "10항"),
         O_SIOT: (C_RIEUL, O_SSANGSIOT, "10항|23항"),
         O_SSANGSIOT: (C_RIEUL, O_SSANGSIOT, "10항"),
@@ -488,7 +488,7 @@ PHONOLOGY_LUT = {
         O_SSANGJIEUT: (C_RIEUL, O_SSANGJIEUT, "Kyubyong/g2pK"),
         O_HIEUT: (C_RIEUL, O_HIEUT, "10항"),
         O_RIEUL: (C_RIEUL, O_RIEUL, "Kyubyong/g2pK"),
-        O_EOW: (C_RIEUL, O_EOW, "Kyubyong/g2pK"),
+        O_EOW: (C_RIEUL, O_EOW, "Kyubyong/g2pK"),                   # g2pK 원본 정규식("ᆯ") 수정. 문장 부호(\W)나 어말($)이 증발하는 오류를 막기 위해 O_EOW를 명시적으로 보존.
     },
 }
 
