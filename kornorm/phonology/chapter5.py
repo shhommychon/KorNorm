@@ -210,7 +210,7 @@ def norm17_a(tokens: List[MorphToken]) -> List[MorphToken]:
 #     먹는[멍는]
 #     국물[궁물]
 #     깎는[깡는]
-#     키윽만[키응만]
+#     키읔만[키응만]
 #     몫몫이[몽목씨]
 #     긁는[긍는]
 #     흙만[흥만]
