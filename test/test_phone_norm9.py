@@ -163,7 +163,7 @@ class TestPhoneNorm9(unittest.TestCase):
             with self.subTest(word=word):
                 tokens = self.processor._tokenize_and_tag(word)
                 
-                res_tokens = apply_phonology_lut(tokens, cross_word_boundary=False)
+                res_tokens = apply_phonology_lut(tokens)
                 actual = self._tokens_to_hangul(res_tokens)
                 
                 g2pk_res = self.g2pk(word)

@@ -143,7 +143,7 @@ class TestPhoneNorm5(unittest.TestCase):
     # ============================================================
     # 제5항 다만 1 (져, 쪄, 쳐 -> 저, 쩌, 처)
     # ============================================================
-    def test_norm5_p1_words(self):
+    def test_norm5_proviso1_words(self):
         """개별 단어 검증: 용언의 활용형 져, 쪄, 쳐"""
         cases = {
             "가져": "가저",
@@ -161,9 +161,7 @@ class TestPhoneNorm5(unittest.TestCase):
 
                 self.assert_kor_equal(expected, actual, log_only=False)
 
-        
-
-    def test_norm5_p1_sentence(self):
+    def test_norm5_proviso1_sentence(self):
         """통합 엔진 검증: 제5항 다만 1 케이스 포함 문장"""
         sentence = self._strip_punctuation("짐을 가져가다가 넘어지는 바람에 다리를 다쳐서, 결국 집에서 감자를 쪄 먹었다.")
         expected = "지믈 가저가다가 너머지는 바라메 다리를 다처서 결국 지베서 감자를 쩌 머걷따"
@@ -177,7 +175,7 @@ class TestPhoneNorm5(unittest.TestCase):
     # ============================================================
     # 제5항 다만 2 (예, 례 이외의 ㅖ -> ㅔ)
     # ============================================================
-    def test_norm5_p2_words(self):
+    def test_norm5_proviso2_words(self):
         """개별 단어 검증: 예, 례 이외의 ㅖ (단, 녜/셰/쎼 제외)"""
         cases = {
             "계집": "게집",
@@ -200,7 +198,7 @@ class TestPhoneNorm5(unittest.TestCase):
 
                 self.assert_kor_equal(expected, actual, log_only=False)
 
-    def test_norm5_p2_sentence(self):
+    def test_norm5_proviso2_sentence(self):
         """통합 엔진 검증: 제5항 다만 2 케이스 포함 문장"""
         sentence = self._strip_punctuation("오랜 몌별의 아픔을 간직하고 계시다는 할머니께, 한 계집아이가 지혜를 발휘해 출입문 개폐와 연계된 스마트 시계를 선물하며 큰 혜택을 드렸다.")
         # 참고: '몌별의', '계집아이가', '개폐와', '연계된', '시계를', '혜택을' 에서 'ㅖ'가 'ㅔ'로 변하고,
@@ -216,7 +214,7 @@ class TestPhoneNorm5(unittest.TestCase):
     # ============================================================
     # 제5항 다만 3 (자음을 첫소리로 가지는 ㅢ -> ㅣ)
     # ============================================================
-    def test_norm5_p3_words(self):
+    def test_norm5_proviso3_words(self):
         """개별 단어 검증: 자음을 첫소리로 가지는 음절의 ㅢ"""
         cases = {
             "닐리리": "닐리리", # 원형 그대로
@@ -241,7 +239,7 @@ class TestPhoneNorm5(unittest.TestCase):
 
                 self.assert_kor_equal(expected, actual, log_only=False)
 
-    def test_norm5_p3_sentence(self):
+    def test_norm5_proviso3_sentence(self):
         """통합 엔진 검증: 제5항 다만 3 케이스 포함 문장"""
         sentence = self._strip_punctuation("희망을 품고 닁큼 달려가 하얗게 희어 빛나는 무늬의 안경을 씌어 주며 희떱다고 장난을 치니, 마음이 확 틔어 마치 닐리리 가락에 맞춰 유희를 즐기듯 올바른 띄어쓰기로 글을 적었다.")
         expected = "히망을 품고 닝큼 달려가 하야케 히어 빈나는 무니의 안경을 씨어 주며 히떱따고 장나늘 치니 마으미 확 티어 마치 닐리리 가라게 마춰 유히를 즐기듣 올바른 띠어쓰기로 그럴 저걷따"
@@ -255,12 +253,12 @@ class TestPhoneNorm5(unittest.TestCase):
     # ============================================================
     # 제5항 다만 4-1 (단어의 첫음절 이외의 ㅢ -> ㅣ)
     # ============================================================
-    def test_norm5_p4_1_words(self):
+    def test_norm5_proviso4_1_words(self):
         """개별 단어 검증: 첫음절 이외의 ㅢ"""
         cases = {
             "주의": "주이",
             "협의": "협이",
-            "우리의": "우리의", # '우리의'의 '의'는 조사가 아니면 이 테스트에선 일단 '이'로 바뀜
+            # "우리의": "우리이", # '우리의'의 '의'는 이 테스트에선 일단 '이'로 바뀜
             "강의의": "강이의", # 첫음절 외의 '의' -> '이'
         }
         for word, expected in cases.items():
@@ -274,7 +272,7 @@ class TestPhoneNorm5(unittest.TestCase):
 
                 self.assert_kor_equal(expected, actual, log_only=False)
 
-    def test_norm5_p4_1_sentence(self):
+    def test_norm5_proviso4_1_sentence(self):
         """통합 엔진 검증: 제5항 다만 4-1 케이스 포함 문장"""
         sentence = self._strip_punctuation("이번 강의의 핵심은 사소한 위험도 주의 깊게 살피고 부서 간 긴밀한 협의를 거치는 데 있습니다.")
         expected = "이번 강이에 핵시믄 사소한 위엄도 주이 깁께 살피고 부서 간 긴밀한 혀비를 거치는 데 읻씀니다"
@@ -288,7 +286,7 @@ class TestPhoneNorm5(unittest.TestCase):
     # ============================================================
     # 제5항 다만 4-2 (조사 '의' -> '에')
     # ============================================================
-    def test_norm5_p4_2_words(self):
+    def test_norm5_proviso4_2_words(self):
         """개별 단어 검증: 조사 '의'"""
         cases = {
             "우리의": "우리에",
@@ -305,7 +303,7 @@ class TestPhoneNorm5(unittest.TestCase):
 
                 self.assert_kor_equal(expected, actual, log_only=False)
 
-    def test_norm5_p4_2_sentence(self):
+    def test_norm5_proviso4_2_sentence(self):
         """통합 엔진 검증: 제5항 다만 4-2 케이스 포함 문장"""
         sentence = self._strip_punctuation("우리의 최종 목표는 지난번 강의의 핵심 규정을 실무에 완벽하게 적용하는 것입니다.")
         expected = "우리에 최총 목표는 지난번 강이에 핵심 규정을 실무에 완벼카게 저굥하는 거심니다"

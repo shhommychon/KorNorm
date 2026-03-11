@@ -202,7 +202,8 @@ def norm18(tokens: List[MorphToken]) -> List[MorphToken]:
 #   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a411
 def norm18_a(tokens: List[MorphToken]) -> List[MorphToken]:
     raise NotImplementedError(
-        "use `from kornorm.phonology.apply_lut import apply_phonology_lut` and set `cross_word_boundary` to `True`"
+        "cross-word nasalization (e.g., 밥 먹는다[밤멍는다]) is deferred until an eojeol-cohesion "
+        "based boundary policy is implemented (see `apply_phonology_lut` docstring)"
     )
 
 

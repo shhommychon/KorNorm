@@ -13,7 +13,8 @@ from kornorm.utils.jamo import (
     O_IEUNG, O_JIEUT, O_SSANGJIEUT, O_CHIEUT, O_KIEUK,
     O_TIEUT, O_PIEUP, O_HIEUT,
 
-    N_A, N_EO, N_O, N_U, N_WI, N_EU,
+    N_A, N_AE, N_EO, N_E, N_YEO, N_O, N_WA, N_WAE, N_OE,
+    N_U, N_WEO, N_WE, N_WI, N_EU, N_UI, N_I,
 
     C_NONE,
     C_GIYEOK, C_SSANGGIYEOK, C_GIYEOK_SIOT, C_NIEUN, C_NIEUN_JIEUT,
@@ -23,6 +24,42 @@ from kornorm.utils.jamo import (
     C_IEUNG, C_JIEUT, C_CHIEUT, C_KIEUK, C_TIEUT,
     C_PIEUP, C_HIEUT,
 )
+
+# [공용 헬퍼 Shared helper]
+#
+# 연음(제12항 4, 제13항, 제14항)과 절음(제15항)은 모두 "뒤 형태소가 형식 형태소인지"를 기준으로
+# 갈라지므로, 판별 로직을 하나로 모아 규칙 간 불일치를 방지한다.
+_FUNCTIONAL_ONSET_VOWELS = (N_A, N_EO, N_YEO, N_EU, N_I)  # 실제 어미가 취할 수 있는 어두 모음 (아/어/여/으/이 계열)
+def _is_functional(curr_token: MorphToken, next_token: MorphToken) -> bool:
+    """
+    뒤 토큰이 형식 형태소(조사, 어미, 접미사, 서술격 조사)인지 판별합니다.
+
+    pecab의 대표적인 태깅 이상 두 가지를 함께 보정합니다:
+    - 모음으로 시작하는 어미(E*) 태그가 ㅏ, ㅓ, ㅕ, ㅡ, ㅣ 이외의 모음으로 시작하면 실질 형태소의
+      오태깅으로 간주합니다 (예: "겉옷" -> 겉/VA + 옷/EC. 실제 어미는 그런 모음으로 시작하지 않음).
+    - 용언 어간 바로 뒤의 단음절 '음'이 명사(NNG)로 오분석되면 명사형 전성어미(ETN)로 간주합니다
+      (예: "헛웃음을" -> 웃/VV+EP + 음/NNG).
+
+    Args:
+        curr_token (MorphToken): 판별 문맥이 되는 앞 토큰.
+        next_token (MorphToken): 형식 형태소 여부를 판별할 뒤 토큰.
+
+    Returns:
+        bool: 형식 형태소로 판단되면 True.
+    """
+    next_jamo = next_token.jamo_str
+    if next_token.pos.startswith('E') and len(next_jamo) >= 2:
+        if next_jamo[0] == O_IEUNG and next_jamo[1] not in _FUNCTIONAL_ONSET_VOWELS:
+            return False
+
+    if next_token.pos.startswith(('J', 'E', "VCP")) or next_token.pos in DERIV_SUFFIX_TAGS:
+        return True
+
+    if next_token.surface == '음' and curr_token.pos.startswith('V'):
+        return True
+
+    return False
+
 
 # [제8항 Norm 8]
 #
@@ -571,7 +608,7 @@ def norm12_4(tokens: List[MorphToken]) -> List[MorphToken]:
             curr_jamo = curr_token.jamo_str  # 갱신된 jamo_str 사용
             next_cho = next_token.jamo_str[0]
 
-            is_functional = next_token.pos.startswith(('J', 'E', "VCP")) or next_token.pos in DERIV_SUFFIX_TAGS
+            is_functional = _is_functional(curr_token, next_token)
 
             if next_cho == O_IEUNG and is_functional:
                 curr_jong = curr_jamo[-1]
@@ -669,7 +706,7 @@ def norm13(tokens: List[MorphToken]) -> List[MorphToken]:
             curr_jamo = curr_token.jamo_str  # 갱신된 jamo_str 사용
             next_cho = next_token.jamo_str[0]
 
-            is_functional = next_token.pos.startswith(('J', 'E', "VCP")) or next_token.pos in DERIV_SUFFIX_TAGS
+            is_functional = _is_functional(curr_token, next_token)
 
             if next_cho == O_IEUNG and is_functional:
                 curr_jong = curr_jamo[-1]
@@ -739,7 +776,7 @@ def norm14(tokens: List[MorphToken]) -> List[MorphToken]:
         curr_jamo = curr_token.jamo_str
         next_cho = next_token.jamo_str[0]
 
-        is_functional = next_token.pos.startswith(('J', 'E', "VCP")) or next_token.pos in DERIV_SUFFIX_TAGS
+        is_functional = _is_functional(curr_token, next_token)
 
         if next_cho == O_IEUNG and is_functional:
             curr_jong = curr_jamo[-1]
@@ -772,22 +809,32 @@ _REP_ONSET_REAL_MORPH = {
     # ㄱ 계열 (ㄱ, ㄲ, ㅋ, ㄳ, ㄺ) -> ㄱ
     C_GIYEOK: O_GIYEOK, C_SSANGGIYEOK: O_GIYEOK, C_KIEUK: O_GIYEOK,
     C_GIYEOK_SIOT: O_GIYEOK, C_RIEUL_GIYEOK: O_GIYEOK,
-    # ㄴ 계열 (ㄴ, ㄵ, ㄶ) -> ㄴ
-    C_NIEUN: O_NIEUN, C_NIEUN_JIEUT: O_NIEUN, C_NIEUN_HIEUT: O_NIEUN,
+    # ㄴ 계열 겹받침 (ㄵ, ㄶ) -> ㄴ
+    C_NIEUN_JIEUT: O_NIEUN, C_NIEUN_HIEUT: O_NIEUN,
     # ㄷ 계열 (ㄷ, ㅅ, ㅆ, ㅈ, ㅊ, ㅌ, ㅎ) -> ㄷ
     C_DIGEUT: O_DIGEUT, C_SIOT: O_DIGEUT, C_SSANGSIOT: O_DIGEUT,
     C_JIEUT: O_DIGEUT, C_CHIEUT: O_DIGEUT, C_TIEUT: O_DIGEUT, C_HIEUT: O_DIGEUT,
-    # ㄹ 계열 (ㄹ, ㄼ, ㄽ, ㄾ, ㅀ) -> ㄹ
-    C_RIEUL: O_RIEUL, C_RIEUL_BIEUP: O_RIEUL, C_RIEUL_SIOT: O_RIEUL,
+    # ㄹ 계열 겹받침 (ㄼ, ㄽ, ㄾ, ㅀ) -> ㄹ
+    C_RIEUL_BIEUP: O_RIEUL, C_RIEUL_SIOT: O_RIEUL,
     C_RIEUL_TIEUT: O_RIEUL, C_RIEUL_HIEUT: O_RIEUL,
-    # ㅁ 계열 (ㅁ, ㄻ) -> ㅁ
-    C_MIEUM: O_MIEUM, C_RIEUL_MIEUM: O_MIEUM,
+    # ㅁ 계열 겹받침 (ㄻ) -> ㅁ
+    C_RIEUL_MIEUM: O_MIEUM,
+    # ※ 공명음 홑받침(ㄴ, ㄹ, ㅁ, ㅇ)은 테이블에서 제외한다. 해설에 따르면 제15항의 절음은
+    #   받침이 대표음 [ㄱ, ㄷ, ㅂ] 중 하나로 바뀐 후 이동하는 현상이므로 공명음 홑받침은 대상이 아니다.
+    #   포함 시 "달리던 아이", "그는 아무"가 [달리더 나이], [그느 나무]로 과발동한다.
+    #   겹받침은 붙임("그중 하나만을 옮겨 발음", 예: 닭 앞에[다가페])에 따라 유지한다.
     # ㅂ 계열 (ㅂ, ㅍ, ㅄ, ㄿ) -> ㅂ
     C_BIEUP: O_BIEUP, C_PIEUP: O_BIEUP, C_BIEUP_SIOT: O_BIEUP, C_RIEUL_PIEUP: O_BIEUP,
-    # ㅇ 계열
-    C_IEUNG: O_IEUNG
+    # ※ 받침 ㅇ(C_IEUNG)은 초성으로 이동할 수 없는 연구개 비음이므로 테이블에서 제외한다.
+    #   포함 시 "식당 음식[식땅 음식]"의 ㅇ 종성이 삭제되는 오류가 발생한다 (예: [식따 음식]).
 }
-_TARGET_VOWELS_REAL_MORPH = (N_A, N_EO, N_O, N_U, N_WI)  # ㅏ, ㅓ, ㅗ, ㅜ, ㅟ
+# 조항의 "ㅏ, ㅓ, ㅗ, ㅜ, ㅟ"는 대표 표기이며, 해설에 따르면 단모음 ㅣ와 반모음 ㅣ[j] 계열
+# (ㅑ, ㅒ, ㅕ, ㅖ, ㅛ, ㅠ)을 제외한 나머지 모음(ㅐ, ㅔ, ㅚ 등)을 모두 포함하는 것으로 본다.
+# ㅣ·j 계열이 제외된 이유는 그 환경에서는 제29항의 ㄴ첨가가 대신 발동하기 때문이다 (예: 앞일[암닐], 꽃잎[꼰닙]).
+_TARGET_VOWELS_REAL_MORPH = (
+    N_A, N_AE, N_EO, N_E, N_O, N_WA, N_WAE, N_OE,
+    N_U, N_WEO, N_WE, N_WI, N_EU, N_UI,
+)  # ㅏ, ㅐ, ㅓ, ㅔ, ㅗ, ㅘ, ㅙ, ㅚ, ㅜ, ㅝ, ㅞ, ㅟ, ㅡ, ㅢ
 def norm15(tokens: List[MorphToken]) -> List[MorphToken]:
     """
     제15항. 받침 뒤에 모음 ‘ㅏ, ㅓ, ㅗ, ㅜ, ㅟ’ 들로 시작되는 실질 형태소가 연결되는 경우에는, 대표음으로 바꾸어서 뒤 음절 첫소리로 옮겨 발음합니다.
@@ -798,6 +845,9 @@ def norm15(tokens: List[MorphToken]) -> List[MorphToken]:
 
     ※ 주의: 본 엔진의 파이프라인 설계 상, 이 함수는 제13항(형식 형태소 연음, `norm13`)을 통과하기 *전*에
     실행되어야 합니다. 그렇지 않을 경우 "맛없다"가 [마덥따]가 아닌 [마섭따]로 오독됩니다.
+
+    ※ 참고: 붙임의 "값어치[가버치]"는 '-어치'가 현행 사전상 접미사임에도 절음되는 예외입니다(해설: 역사적
+    실질 형태소). 본 엔진은 pecab이 '어치'를 NNG(실질)로 태깅하는 데 의존하므로, 사전 패치 시 주의가 필요합니다.
 
     Ref:
         g2pk.regular.link3()
@@ -839,9 +889,12 @@ def norm15(tokens: List[MorphToken]) -> List[MorphToken]:
         next_cho = next_jamo[0]
         next_joong = next_jamo[1] if len(next_jamo) >= 2 else ""
 
-        # 모음(ㅏ, ㅓ, ㅗ, ㅜ, ㅟ)으로 시작하는 실질 형태소인지 확인
-        if next_cho == O_IEUNG and next_joong in _TARGET_VOWELS_REAL_MORPH:
-            is_functional = next_token.pos.startswith(('J', 'E', "VCP")) or next_token.pos in DERIV_SUFFIX_TAGS
+        # 모음(비 ㅣ·j 계열)으로 시작하는 실질 형태소인지 확인.
+        # '있-'은 ㅣ로 시작하지만 ㄴ첨가 없이 절음되는 어휘적 예외 (예: 맛있다[마딛따] 원칙, 값있는[가빈는]).
+        # 여기서 원칙 발음을 만든 뒤, 허용 발음(맛있다[마싣따])은 후속 norm15_p가 덮어쓴다.
+        is_target_vowel = next_joong in _TARGET_VOWELS_REAL_MORPH or next_token.surface.startswith("있")
+        if next_cho == O_IEUNG and is_target_vowel:
+            is_functional = _is_functional(curr_token, next_token)
 
             if not is_functional:
                 if curr_jong in _REP_ONSET_REAL_MORPH:

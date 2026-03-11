@@ -156,7 +156,7 @@ class TestPhoneNorm12(unittest.TestCase):
             with self.subTest(word=word):
                 tokens = self.processor._tokenize_and_tag(word)
 
-                res_tokens = apply_phonology_lut(tokens, cross_word_boundary=False)
+                res_tokens = apply_phonology_lut(tokens)
                 actual = self._tokens_to_hangul(res_tokens)
                 
                 g2pk_res = self.g2pk(word)
@@ -189,7 +189,7 @@ class TestPhoneNorm12(unittest.TestCase):
                 tokens = self.processor._tokenize_and_tag(word)
 
                 tokens = norm12_1_c(tokens)
-                res_tokens = apply_phonology_lut(tokens, cross_word_boundary=False)
+                res_tokens = apply_phonology_lut(tokens)
                 actual = self._tokens_to_hangul(res_tokens)
                 
                 g2pk_res = self.g2pk(word)
@@ -201,7 +201,7 @@ class TestPhoneNorm12(unittest.TestCase):
         """통합 엔진 검증: 제12항 1 해설 포함 문장"""
         sentence = self._strip_punctuation("건조증에 손에 염증이 나는게 아주 그냥 싫증이 난다.")
         expected = "건조쯩에 소네 염쯩이 나는게 아주 그냥 실쯩이 난다"
-        actual = apply_phonology(sentence, output_format="hangul", cross_word_boundary=True)
+        actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
         
         self.assert_kor_equal(expected, g2pk_res, log_only=True)
@@ -227,7 +227,7 @@ class TestPhoneNorm12(unittest.TestCase):
             with self.subTest(word=word):
                 tokens = self.processor._tokenize_and_tag(word)
 
-                res_tokens = apply_phonology_lut(tokens, cross_word_boundary=False)
+                res_tokens = apply_phonology_lut(tokens)
                 actual = self._tokens_to_hangul(res_tokens)
                 
                 g2pk_res = self.g2pk(word)
@@ -262,7 +262,7 @@ class TestPhoneNorm12(unittest.TestCase):
                 tokens = self.processor._tokenize_and_tag(word)
 
                 tokens = norm12_1_a2(tokens)
-                res_tokens = apply_phonology_lut(tokens, cross_word_boundary=True) # 띄어쓰기에도 음운변동 적용
+                res_tokens = apply_phonology_lut(tokens)
                 actual = self._tokens_to_hangul(res_tokens)
                 
                 g2pk_res = self.g2pk(word)
@@ -274,7 +274,7 @@ class TestPhoneNorm12(unittest.TestCase):
         """통합 엔진 검증: 제12항 1 붙임 2 포함 문장"""
         sentence = self._strip_punctuation("옷 한 벌 사기 위해 낮 한때 거리를 헤매다 꽃 한 송이 못 샀지만, 그 숱하다는 사람들 사이에서 따뜻하다 못해 훈훈한 정을 느꼈다.")
         expected = "오 탄 벌 사기 위해 나 탄때 거리를 헤매다 꼬 탄 송이 몯 삳찌만 그 수타다는 사람들 사이에서 따뜨타다 모태 훈훈한 정을 느껻따"
-        actual = apply_phonology(sentence, output_format="hangul", cross_word_boundary=True) # 띄어쓰기에도 음운변동 적용
+        actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
         
         self.assert_kor_equal(expected, g2pk_res, log_only=True)
@@ -295,7 +295,7 @@ class TestPhoneNorm12(unittest.TestCase):
             with self.subTest(word=word):
                 tokens = self.processor._tokenize_and_tag(word)
 
-                res_tokens = apply_phonology_lut(tokens, cross_word_boundary=False)
+                res_tokens = apply_phonology_lut(tokens)
                 actual = self._tokens_to_hangul(res_tokens)
                 
                 g2pk_res = self.g2pk(word)
@@ -327,7 +327,7 @@ class TestPhoneNorm12(unittest.TestCase):
             with self.subTest(word=word):
                 tokens = self.processor._tokenize_and_tag(word)
 
-                res_tokens = apply_phonology_lut(tokens, cross_word_boundary=False)
+                res_tokens = apply_phonology_lut(tokens)
                 actual = self._tokens_to_hangul(res_tokens)
                 
                 g2pk_res = self.g2pk(word)
@@ -361,7 +361,7 @@ class TestPhoneNorm12(unittest.TestCase):
             with self.subTest(word=word):
                 tokens = self.processor._tokenize_and_tag(word)
 
-                res_tokens = apply_phonology_lut(tokens, cross_word_boundary=False)
+                res_tokens = apply_phonology_lut(tokens)
                 actual = self._tokens_to_hangul(res_tokens)
                 
                 g2pk_res = self.g2pk(word)
@@ -398,7 +398,7 @@ class TestPhoneNorm12(unittest.TestCase):
             with self.subTest(word=word):
                 tokens = self.processor._tokenize_and_tag(word)
 
-                res_tokens = apply_phonology_lut(tokens, cross_word_boundary=False)
+                res_tokens = apply_phonology_lut(tokens)
                 res_tokens = norm12_4(res_tokens)
                 actual = self._tokens_to_hangul(res_tokens)
                 

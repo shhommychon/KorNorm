@@ -494,7 +494,6 @@ PHONOLOGY_LUT = {
 
 def apply_phonology_lut(
     tokens: List[MorphToken],
-    cross_word_boundary: bool = False,
 ) -> List[MorphToken]:
     """
     2D LUT(PHONOLOGY_LUT)를 기반으로 O(1) 복잡도의 인접 종성-초성 간 음운 변동을 수행합니다.
@@ -508,16 +507,14 @@ def apply_phonology_lut(
     이를 통해 파이프라인의 순서 의존성을 제거하고, 단 한 번의 참조만으로 결과를 도출하는
     O(1) 복잡도를 지향합니다.
 
-    `cross_word_boundary` 파라미터가 `False`일 때는 공백을 경계로 음운 변동을 차단하여 보수적으로 적용하며,
-    `True`일 때는 띄어쓰기를 무시하고 원칙에 맞게 일괄 적용합니다.
+    본 함수는 토큰 내부 및 공백 없는 토큰 경계의 "무조건적 변동"만을 담당합니다. 공백(어절 경계) 앞의
+    종성은 어말(EOW)로 취급하여 대표음화만 수행합니다 (예: "옷 안" -> [옫 안]).
 
-    국어국문학적 원칙이나 빠른 구어체에서는 단어 사이에도 연음 및 동화가 발생하는 것이 표준발음법에 맞습니다.
-    (예: "옷 안" -> [오단]). g2pK 원작자 역시 공백 유무와 무관하게 음운 변동을 적용하도록 구현한 바 있습니다.
-
-    하지만 음성 합성이나 음성 인식 과제에서는 띄어쓰기(공백)가 곧 짧은 휴지(pause)를 의미하는 경우가 많습니다.
-    이 경우 단어 간 변동을 막아 개별 발음을 또렷하게 유지하는 것(예: "옷 안" -> [옫 안])이 더 적합한
-    텍스트 전처리일 수 있으므로 본 엔진은 기본값을 `False`로 설정합니다. 타겟 도메인과 사용하시는
-    텍스트의 특성을 종합적으로 고려하여 해당 파라미터를 설정하시기 바랍니다.
+    띄어쓰기를 넘어 발생해야 하는 음운 변동(예: 제15항 절음 "밭 아래[바다래]", 제12항 붙임 2 격음화
+    "옷 한 벌[오탄벌]")은 LUT의 소관이 아니라, 규범 조항별로 공백 정책을 스스로 판단하는 전용 함수
+    (`norm15`, `norm12_1_a2`, `norm27` 등)의 소관입니다. g2pK 원작자는 공백 유무와 무관하게 변동을
+    일괄 적용했으나, 이는 연음·유음화·경음화가 어절 경계를 넘어 과발동하는 원인이 되므로
+    (예: "시를 읊어" -> [시르 를퍼]) 본 엔진은 이를 계승하지 않습니다.
 
     Ref:
         g2pk.utils.parse_table()
@@ -527,7 +524,6 @@ def apply_phonology_lut(
 
     Args:
         tokens (List[MorphToken]): 형태소 분석 및 자모 분해가 완료된 토큰 리스트.
-        cross_word_boundary (bool): 띄어쓰기(공백)를 넘어 단어 간 음운 변동을 적용할지 여부. (기본값: False)
 
     Returns:
         List[MorphToken]: 인접한 종성과 초성 간의 동화, 탈락, 경음화 등 음운 변동 규칙이 적용된 토큰 리스트.
@@ -568,19 +564,12 @@ def apply_phonology_lut(
         # 2-1. 다음 토큰의 인덱스 및 초성 탐색
         next_idx = i + 1
 
-        if next_idx < len(tokens) and tokens[next_idx].pos == "SP":
-            if not cross_word_boundary:
-                # 공백 경계를 넘지 않도록 설정된 경우, 어말(EOW)로 처리
-                next_cho = O_EOW
-            else:
-                # 공백을 건너뛰어 다음 형태소 탐색
-                next_idx += 1
-                if next_idx >= len(tokens):
-                    next_cho = O_EOW
-                else:
-                    next_cho = tokens[next_idx].jamo_str[0]
-        elif next_idx >= len(tokens):
+        if next_idx >= len(tokens):
             # 토큰 배열의 끝에 도달한 경우 어말(EOW)로 처리
+            next_cho = O_EOW
+        elif tokens[next_idx].pos == "SP":
+            # 공백(어절 경계)은 어말(EOW)로 처리. 공백을 넘는 음운 변동은
+            # 규칙별 전용 함수(norm15, norm12_1_a2, norm27 등)의 소관이다.
             next_cho = O_EOW
         else:
             # 공백 없이 인접한 토큰인 경우

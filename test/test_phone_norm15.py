@@ -7,10 +7,10 @@ from g2pk import G2p
 
 from kornorm.phonology.engine import PhonologicProcessor, apply_phonology
 from kornorm.phonology.apply_lut import apply_phonology_lut
-from kornorm.phonology.chapter4 import norm13
+from kornorm.phonology.chapter4 import norm13, norm15, norm15_p
 from kornorm.utils.jamo import join_jamos
 
-class TestPhoneNorm13(unittest.TestCase):
+class TestPhoneNorm15(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """테스트 전체에서 한 번만 사전(Arrow)과 토크나이저를 로드합니다."""
@@ -140,27 +140,25 @@ class TestPhoneNorm13(unittest.TestCase):
             raise AssertionError(error_msg)
 
     # ================================================================================
-    # 제13항 홑받침/쌍받침 뒤에 모음으로 시작된 조사/어미/접미사 결합
-    #        -> 뒤 음절 첫소리로 연음
+    # 제15항 받침 뒤에 모음 ㅏ, ㅓ, ㅗ, ㅜ, ㅟ로 시작된 실질 형태소 결합
+    #        -> 대표음으로 바꾸어서 뒤 음절 첫소리로 연음
     # ================================================================================
-    def test_norm13_words(self):
-        """개별 단어 검증: 제13항 (홑받침/쌍받침의 연음)"""
+    def test_norm15_words(self):
+        """개별 단어 검증: 제15항 본항 (실질 형태소 앞 대표음 연음)"""
         cases = {
-            "깎아": "까까",
-            "옷이": "오시",
-            "있어": "이써",
-            "낮이": "나지",
-            "꽂아": "꼬자",
-            "꽃을": "꼬츨",
-            "쫓아": "쪼차",
-            "밭에": "바테",
-            "앞으로": "아프로",
-            "덮이다": "더피다",
+            "밭 아래": "바 다래",
+            "늪 앞": "느 밥",
+            "젖어미": "저더미",
+            "맛없다": "마덥따",
+            "겉옷": "거돋",
+            "헛웃음": "허두슴",
+            "꽃 위": "꼬 뒤",
         }
         for word, expected in cases.items():
             with self.subTest(word=word):
                 tokens = self.processor._tokenize_and_tag(word)
 
+                tokens = norm15(tokens)
                 res_tokens = apply_phonology_lut(tokens)
                 res_tokens = norm13(res_tokens)
                 actual = self._tokens_to_hangul(res_tokens)
@@ -170,10 +168,81 @@ class TestPhoneNorm13(unittest.TestCase):
 
                 self.assert_kor_equal(expected, actual, log_only=False)
 
-    def test_norm13_sentences(self):
-        """통합 엔진 검증: 제13항 포함 문장"""
-        sentence = self._strip_punctuation("사과를 깎아 먹으며 옷이 젖은 줄도 모르고 있어 보니, 낮이 저물어 밭에 핀 꽃을 꺾어 병에 꽂아 두고, 나비를 쫓아 달리던 아이 발이 앞으로 먼지에 덮이다.")
-        expected = "사과를 까까 머그며 오시 저즌 줄도 모르고 이써 보니 나지 저무러 바테 핀 꼬츨 꺼꺼 병에 꼬자 두고 나비를 쪼차 달리던 아이 바리 아프로 먼지에 더피다"
+    def test_norm15_sentences(self):
+        """통합 엔진 검증: 제15항 본항 포함 문장"""
+        sentence = self._strip_punctuation("밭 아래 늪 앞을 지나던 젖어미가 맛없다는 소리에 헛웃음을 지으며 겉옷에 붙은 꽃 위 이슬을 털었다.")
+        expected = "바 다래 느 바플 지나던 저더미가 마덥따는 소리에 허두스믈 지으며 거도세 부튼 꼬 뒤 이스를 터럳따"
+        actual = apply_phonology(sentence, output_format="hangul")
+        g2pk_res = self.g2pk(sentence)
+
+        self.assert_kor_equal(expected, g2pk_res, log_only=True)
+
+        self.assert_kor_equal(expected, actual, log_only=False)
+
+    # ================================================================================
+    # 제15항 다만 "맛있다", "멋있다" -> [마싣따], [머싣따] 허용
+    # ================================================================================
+    def test_norm15_proviso_words(self):
+        """개별 단어 검증: 제15항 다만 (맛있다/멋있다 허용 발음)"""
+        cases = {
+            "맛있다": "마싣따",
+            "멋있다": "머싣따",
+        }
+        for word, expected in cases.items():
+            with self.subTest(word=word):
+                tokens = self.processor._tokenize_and_tag(word)
+
+                tokens = norm15(tokens)
+                tokens = norm15_p(tokens)
+                res_tokens = apply_phonology_lut(tokens)
+                res_tokens = norm13(res_tokens)
+                actual = self._tokens_to_hangul(res_tokens)
+
+                g2pk_res = self.g2pk(word)
+                self.assert_kor_equal(expected, g2pk_res, log_only=True)
+
+                self.assert_kor_equal(expected, actual, log_only=False)
+
+    def test_norm15_proviso_sentences(self):
+        """통합 엔진 검증: 제15항 다만 포함 문장"""
+        sentence = self._strip_punctuation("새로 연 식당 음식이 참 맛있다 하니 주인장도 멋있다 생각했다.")
+        expected = "새로 연 식땅 음시기 참 마싣따 하니 주인장도 머싣따 생가캗따"
+        actual = apply_phonology(sentence, output_format="hangul")
+        g2pk_res = self.g2pk(sentence)
+
+        self.assert_kor_equal(expected, g2pk_res, log_only=True)
+
+        self.assert_kor_equal(expected, actual, log_only=False)
+
+    # ================================================================================
+    # 제15항 붙임 겹받침의 경우에는 그중 하나만을 옮겨 발음
+    # ================================================================================
+    def test_norm15_addendum_words(self):
+        """개별 단어 검증: 제15항 붙임 (겹받침 하나만 연음)"""
+        cases = {
+            "넋 없다": "너 겁따",
+            "닭 앞에": "다 가페",
+            "값어치": "가버치",
+            "값있는": "가빈는",
+        }
+        for word, expected in cases.items():
+            with self.subTest(word=word):
+                tokens = self.processor._tokenize_and_tag(word)
+
+                tokens = norm15(tokens)
+                res_tokens = apply_phonology_lut(tokens)
+                res_tokens = norm13(res_tokens)
+                actual = self._tokens_to_hangul(res_tokens)
+
+                g2pk_res = self.g2pk(word)
+                self.assert_kor_equal(expected, g2pk_res, log_only=True)
+
+                self.assert_kor_equal(expected, actual, log_only=False)
+
+    def test_norm15_addendum_sentences(self):
+        """통합 엔진 검증: 제15항 붙임 포함 문장"""
+        sentence = self._strip_punctuation("넋 없다 소리를 듣던 그는 닭 앞에 서서 값어치 모르는 값있는 보석을 떠올렸다.")
+        expected = "너 겁따 소리를 듣떤 그는 다 가페 서서 가버치 모르는 가빈는 보서글 떠올렫따"
         actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
 

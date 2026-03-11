@@ -357,7 +357,9 @@ def norm27(
         if curr_token.pos.startswith('S'):
             continue
 
-        if curr_token.pos.startswith('E') and curr_token.jamo_str[-1] == C_RIEUL:
+        # 관형사형 전성어미(ETM)로 한정한다. 'E' 전체로 검사하면 ㄹ로 끝나는 연결어미('-거늘' 등)나
+        # 명사형 어미 오태깅('을/ETN' 등)까지 경음화가 오발동한다 (예: "헛웃음을 지으며" -> [찌으며]).
+        if curr_token.pos == "ETM" and curr_token.jamo_str[-1] == C_RIEUL:
             next_idx = i + 1
             has_space = False
 

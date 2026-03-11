@@ -173,6 +173,11 @@ def norm29(tokens: List[MorphToken]) -> List[MorphToken]:
             if next_token.pos.startswith('S'):
                 continue
 
+            # '있-'은 '이'로 시작하는 실질 형태소지만 ㄴ첨가 없이 절음·연음되는 어휘적 예외
+            # (제15항 다만 맛있다[마싣따], 붙임 값있는[가빈는] — 해설 참조)
+            if next_token.surface.startswith("있"):
+                continue
+
             is_curr_valid = curr_token.pos.startswith(SUBSTANTIVE_TAGS) or curr_token.pos == "XPN"
             is_next_valid = next_token.pos.startswith(SUBSTANTIVE_TAGS) or next_token.pos in DERIV_SUFFIX_TAGS
 
