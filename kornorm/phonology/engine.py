@@ -17,7 +17,7 @@ from kornorm.phonology.chapter4 import (
     norm10_p, norm11_p, norm12_1_c, norm12_1_a2, norm12_4, norm13, norm14, norm15, norm15_p, norm16,
 )
 from kornorm.phonology.chapter5 import (
-    norm17, norm17_a, norm20_p, norm22, norm22_a,
+    norm17, norm17_a, norm20_p,
 )
 from kornorm.phonology.chapter6 import (
     norm24, norm25, norm26, norm27, norm27_a,
@@ -226,8 +226,8 @@ class PhonologicProcessor:
         tokens = norm5_p3(tokens)
         tokens = norm5_p4_2(tokens)
         tokens = norm5_p4_1(tokens)
-        tokens = norm22(tokens)
-        tokens = norm22_a(tokens)
+        # 제22항 본항(어->여) 및 붙임(오->요)은 허용 조항이므로 기본 파이프라인에서는 원칙형을 유지한다.
+        # 허용형이 필요하면 본 클래스를 상속받아 chapter5의 norm22/norm22_a를 파이프라인에 추가하십시오.
 
         tokens = norm10_p(tokens)
         tokens = norm11_p(tokens)
