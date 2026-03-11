@@ -50,6 +50,7 @@ class MorphToken:
     jamo_str: str
     is_hanja: bool = False
     compound_structure: str = ''
+    pronunciation: str = ''
 
 
 # 연음(제12항 4, 제13항, 제14항)·절음(제15항)·자모 이름(제16항)·구개음화(제17항)는 모두

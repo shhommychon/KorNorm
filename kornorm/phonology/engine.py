@@ -40,6 +40,47 @@ def apply_phonology(text: str, output_format: str = "positional") -> str:
     return global_phonology_engine(text, output_format=output_format)
 
 
+def apply_stdict_pronunciation(tokens: List[MorphToken]) -> List[MorphToken]:
+    """
+    표준국어대사전(stdict)의 발음 정보를 규칙 연산에 앞서 토큰에 선적용합니다.
+
+    규칙만으로 도출할 수 없는 어휘적 발음(예: 대관령[대괄령] vs 동원령[동원녕], 공권력[공꿘녁],
+    줄넘기[줄럼끼])을 사전 조회 한 번으로 확정합니다. g2pK의 idioms.txt식 하드코딩 목록을
+    수만 어휘 규모의 DAT 사전 조회로 대체하는 본 엔진의 핵심 차별점입니다.
+
+    단, 어말 종성은 표면형의 받침을 유지합니다. 사전 발음은 고립형(어말 중화 적용)이라 그대로
+    치환하면 뒤 문맥과의 연음이 깨지기 때문입니다
+    (예: 나뭇잎[나문닙] -> "나문닢"으로 복원해야 "나뭇잎이[나문니피]"가 성립).
+
+    Args:
+        tokens (List[MorphToken]): 형태소 분석 및 자모 분해가 완료된 토큰 리스트.
+
+    Returns:
+        List[MorphToken]: 사전 등재 발음이 자모에 반영된 토큰 리스트.
+    """
+    for token in tokens:
+        if token.pos.startswith('S'):
+            continue
+
+        # 사전 표제어와 표면형이 온전히 일치하는 것은 사실상 체언·수식언·어근 계열이므로,
+        # 어미·조사 등이 동형의 표제어와 우연히 충돌하는 것을 막는다 (예: 연결어미 '다가' vs 多價[다까]).
+        if not token.pos.startswith(('N', 'M', "XR")):
+            continue
+
+        pron = token.pronunciation
+        if not pron or pron == token.surface or len(pron) != len(token.surface):
+            continue
+
+        # 완성형 한글 이외의 문자가 섞인 발음 표기는 보수적으로 스킵
+        if any(not ('가' <= ch <= '힣') for ch in pron):
+            continue
+
+        new_jamo = decompose(pron)
+        token.jamo_str = new_jamo[:-1] + token.jamo_str[-1]
+
+    return tokens
+
+
 class PhonologicProcessor:
     """
     KorNorm 메인 음운 변동 엔진
@@ -120,6 +161,7 @@ class PhonologicProcessor:
         ):
             is_h = False
             comp_str = ''
+            pron_str = ''
 
             # 사전 조회를 통한 메타데이터 확보
             if self.stdict_trie is not None:
@@ -128,6 +170,7 @@ class PhonologicProcessor:
                     if isinstance(dict_info, dict):
                         is_h = (dict_info.get("is_hanja") == '1')
                         comp_str = dict_info.get("compound_structure", '')
+                        pron_str = dict_info.get("pronunciation", '')
                 except KeyError:
                     pass
 
@@ -139,6 +182,7 @@ class PhonologicProcessor:
                 jamo_str=decompose(term),
                 is_hanja=is_h,
                 compound_structure=comp_str,
+                pronunciation=pron_str,
             )
             tokens.append(token)
 
@@ -160,6 +204,9 @@ class PhonologicProcessor:
                 - "hangul": 초중종성이 결합된 완성형 한글 (예: 먹)
         """
         tokens = self._tokenize_and_tag(text)
+
+        # 0. 표준국어대사전 발음 선적용 (어휘적 발음 확정)
+        tokens = apply_stdict_pronunciation(tokens)
 
         # 1. 한자어 처리
         tokens = norm20_p(tokens)

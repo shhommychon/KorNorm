@@ -377,8 +377,23 @@ def norm20_p(tokens: List[MorphToken]) -> List[MorphToken]:
             continue
 
         # 1. 단일 토큰 내부에서 발생하는 경우 (예: "의견란"이 하나의 명사로 묶여 들어온 경우)
-        # 조건: 한자어이면서 전체 길이가 3음절 이상일 때
-        if getattr(curr_token, "is_hanja", False) and len(curr_token.surface) >= 3:
+        # 조건: 한자어이면서 전체 길이가 3음절 이상일 때.
+        # ※ 사전 등재어(광한루[광할루], 대관령[대괄령] 등)는 파이프라인 앞단의
+        #   `apply_stdict_pronunciation`이 발음을 이미 확정하므로 본 휴리스틱의 영향을 받지 않는다.
+        #   여기서는 사전에 없는 미등재 한자어(신조어 등)만 경향 휴리스틱으로 보정한다.
+        if (
+            getattr(curr_token, "is_hanja", False)
+            and len(curr_token.surface) >= 3
+        ):
+            # 표준국어대사전 합성 구조(cs)가 있으면 각 결합 경계의 시작 음절 인덱스를 수집한다.
+            comp = getattr(curr_token, "compound_structure", '')
+            boundary_starts = set()
+            if comp and '-' in comp:
+                acc = 0
+                for part in comp.split('-')[:-1]:
+                    acc += len(part)
+                    boundary_starts.add(acc)
+
             jamo = curr_token.jamo_str
             new_jamo = ""
             # 3단위(초,중,종) 순회
@@ -388,7 +403,10 @@ def norm20_p(tokens: List[MorphToken]) -> List[MorphToken]:
                 # 현재 글자의 초성이 'ㄹ'이고, 앞 글자의 종성이 'ㄴ'이며,
                 # 앞에 최소 2음절(6자모) 이상이 존재할 때 (j >= 6)
                 if j >= 6 and cho == O_RIEUL and new_jamo[-1] == C_NIEUN:
-                    cho = O_NIEUN
+                    # 합성 구조 정보가 있으면 'ㄹ' 음절이 결합 경계의 시작일 때만 다만을 적용한다.
+                    # (예: "의견-란"의 '란' O / "물-난리"의 '리'는 난리 내부 음절이므로 X -> 본항 유음화 [물랄리])
+                    if not boundary_starts or (j // 3) in boundary_starts:
+                        cho = O_NIEUN
 
                 new_jamo += cho + joong + jong
             curr_token.jamo_str = new_jamo

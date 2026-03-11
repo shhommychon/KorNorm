@@ -857,7 +857,9 @@ def norm15(tokens: List[MorphToken]) -> List[MorphToken]:
 
         # 뒤에 이어지는 다음 실질 형태소를 찾기 위해 공백(SP) 토큰은 건너뜀
         next_idx = i + 1
+        has_space = False
         if tokens[next_idx].pos == "SP":
+            has_space = True
             next_idx += 1
 
         if next_idx >= len(tokens):
@@ -880,7 +882,10 @@ def norm15(tokens: List[MorphToken]) -> List[MorphToken]:
         # 모음(비 ㅣ·j 계열)으로 시작하는 실질 형태소인지 확인.
         # '있-'은 ㅣ로 시작하지만 ㄴ첨가 없이 절음되는 어휘적 예외 (예: 맛있다[마딛따] 원칙, 값있는[가빈는]).
         # 여기서 원칙 발음을 만든 뒤, 허용 발음(맛있다[마싣따])은 후속 norm15_p가 덮어쓴다.
-        is_target_vowel = next_joong in _TARGET_VOWELS_REAL_MORPH or next_token.surface.startswith("있")
+        # 단, 이 특례는 붙여 쓰는 어휘화된 결합에 한정한다. 공백을 사이에 둔 통사적 구성
+        # (예: "결단력 있게")까지 절음하면 [결딴녀 긷께]로 과발동한다.
+        is_lexical_it = next_token.surface.startswith("있") and not has_space
+        is_target_vowel = next_joong in _TARGET_VOWELS_REAL_MORPH or is_lexical_it
         if next_cho == O_IEUNG and is_target_vowel:
             is_functional = _is_functional(curr_token, next_token)
 
