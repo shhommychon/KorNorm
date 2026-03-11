@@ -14,7 +14,7 @@ from kornorm.phonology.chapter2 import (
     norm5_p1, norm5_p2, norm5_p3, norm5_p4_1, norm5_p4_2,
 )
 from kornorm.phonology.chapter4 import (
-    norm10_p, norm11_p, norm12_4, norm13, norm14, norm15, norm15_p, norm16,
+    norm10_p, norm11_p, norm12_1_c, norm12_1_a2, norm12_4, norm13, norm14, norm15, norm15_p, norm16,
 )
 from kornorm.phonology.chapter5 import (
     norm17, norm17_a, norm20_p, norm22, norm22_a,
@@ -33,11 +33,11 @@ def worker_init():
     if global_phonology_engine is None:
         global_phonology_engine = PhonologicProcessor()
 
-def apply_phonology(text: str, output_format: str = "positional") -> str:
+def apply_phonology(text: str, output_format: str = "positional", cross_word_boundary: bool = True) -> str:
     global global_phonology_engine
     if global_phonology_engine is None:
         global_phonology_engine = PhonologicProcessor()
-    return global_phonology_engine(text, output_format=output_format)
+    return global_phonology_engine(text, output_format=output_format, cross_word_boundary=cross_word_boundary)
 
 
 class PhonologicProcessor:
@@ -147,7 +147,8 @@ class PhonologicProcessor:
     def __call__(
         self,
         text: str,
-        output_format: Literal["positional", "compat", "hangul"] = "positional"
+        output_format: Literal["positional", "compat", "hangul"] = "positional",
+        cross_word_boundary: bool = False,
     ) -> str:
         """
         텍스트를 입력받아 표준발음법이 적용된 결과를 반환합니다.
@@ -158,6 +159,7 @@ class PhonologicProcessor:
                 - "positional": (기본값) U+11xx 형태의 위치 기반 자모 분리 상태 (예: ᄆ​ᅥ​ᆨ)
                 - "compat": U+313x 형태의 호환 자모 분리 상태 (예: ㅁ​ㅓ​ㄱ)
                 - "hangul": 초중종성이 결합된 완성형 한글 (예: 먹)
+            cross_word_boundary (bool): 띄어쓰기(공백)를 넘어 단어 간 음운 변동을 적용할지 여부. (기본값: False)
         """
         tokens = self._tokenize_and_tag(text)
 
@@ -194,8 +196,11 @@ class PhonologicProcessor:
         tokens = norm17(tokens)
         tokens = norm17_a(tokens)
 
+        tokens = norm12_1_c(tokens)
+        tokens = norm12_1_a2(tokens)
+
         # 5. 메인 O(1) 2D LUT 적용 (일반 자음 동화, 비음화, 유음화 등)
-        tokens = apply_phonology_lut(tokens, cross_word_boundary=False) # 공백을 경계로 음운 변동을 차단하여 보수적으로 적용
+        tokens = apply_phonology_lut(tokens, cross_word_boundary=cross_word_boundary) # 공백을 경계로 음운 변동을 차단하여 보수적으로 적용
 
         # 6. 연음 및 탈락 적용
         tokens = norm13(tokens)
