@@ -619,6 +619,10 @@ def norm13(tokens: List[MorphToken]) -> List[MorphToken]:
     """
     제13항. 홑받침이나 쌍받침이 모음으로 시작된 조사, 어미, 접미사와 결합되는 경우에는, 제 음가대로 뒤 음절 첫소리로 옮겨 발음합니다.
 
+    토큰 내부(예: '덮이다')와 토큰 경계(예: '옷이', '깎아') 환경을 나누어 처리합니다.
+    형태소 분석기가 어간+접미사를 한 토큰으로 묶는 경우(예: 덮이/VV) 연음 경계가 토큰 내부에
+    숨기 때문에, 토큰 경계 순회만으로는 연음이 누락됩니다.
+
     ※ 주의: 본 엔진의 파이프라인 설계 상, 본 함수는 제15항(실질 형태소 앞 대표음 변환, `norm15`)이
     모두 완료된 *후*에 동작해야 합니다. 이는 zeroth 기여자 Lucas Jo의 코드에서 명시된 전제 조건
     ("15항의 실질형태소에 의한 대표음이 미리 적용되었다고 가정")을 따르는 구조입니다.
@@ -636,23 +640,42 @@ def norm13(tokens: List[MorphToken]) -> List[MorphToken]:
     Returns:
         List[MorphToken]: 홑/쌍받침이 뒤 모음의 초성으로 연음된 리스트.
     """
-    for i in range(len(tokens) - 1):
+    for i in range(len(tokens)):
         curr_token = tokens[i]
-        next_token = tokens[i+1]
-
-        if curr_token.pos.startswith('S') or next_token.pos.startswith('S'):
+        if curr_token.pos.startswith('S'):
             continue
 
-        curr_jamo = curr_token.jamo_str
-        next_cho = next_token.jamo_str[0]
+        # 1. 토큰 내부(Intra-token) 처리
+        jamo = curr_token.jamo_str
+        if len(jamo) >= 6:
+            new_jamo = ''
+            for j in range(0, len(jamo), 3):
+                cho, joong, jong = jamo[j:j+3]
+                if j >= 3:
+                    prev_jong = new_jamo[-1]
+                    # 단일 토큰 내부는 기본적으로 어간+접미사 결합으로 간주 (예: 덮이/VV -> [더피])
+                    if cho == O_IEUNG and prev_jong in _JONG_TO_CHO:
+                        new_jamo = new_jamo[:-1] + C_NONE
+                        cho = _JONG_TO_CHO[prev_jong]
+                new_jamo += cho + joong + jong
+            curr_token.jamo_str = new_jamo
 
-        is_functional = next_token.pos.startswith(('J', 'E')) or next_token.pos in DERIV_SUFFIX_TAGS
+        # 2. 토큰 경계(Inter-token) 처리
+        if i < len(tokens) - 1:
+            next_token = tokens[i+1]
+            if next_token.pos.startswith('S'):
+                continue
 
-        if next_cho == O_IEUNG and is_functional:
-            curr_jong = curr_jamo[-1]
-            if curr_jong in _JONG_TO_CHO:
-                curr_token.jamo_str = curr_jamo[:-1] + C_NONE
-                next_token.jamo_str = _JONG_TO_CHO[curr_jong] + next_token.jamo_str[1:]
+            curr_jamo = curr_token.jamo_str  # 갱신된 jamo_str 사용
+            next_cho = next_token.jamo_str[0]
+
+            is_functional = next_token.pos.startswith(('J', 'E')) or next_token.pos in DERIV_SUFFIX_TAGS
+
+            if next_cho == O_IEUNG and is_functional:
+                curr_jong = curr_jamo[-1]
+                if curr_jong in _JONG_TO_CHO:
+                    curr_token.jamo_str = curr_jamo[:-1] + C_NONE
+                    next_token.jamo_str = _JONG_TO_CHO[curr_jong] + next_token.jamo_str[1:]
 
     return tokens
 
