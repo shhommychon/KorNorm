@@ -571,7 +571,7 @@ def norm12_4(tokens: List[MorphToken]) -> List[MorphToken]:
             curr_jamo = curr_token.jamo_str  # 갱신된 jamo_str 사용
             next_cho = next_token.jamo_str[0]
 
-            is_functional = next_token.pos.startswith(('J', 'E')) or next_token.pos in DERIV_SUFFIX_TAGS
+            is_functional = next_token.pos.startswith(('J', 'E', "VCP")) or next_token.pos in DERIV_SUFFIX_TAGS
 
             if next_cho == O_IEUNG and is_functional:
                 curr_jong = curr_jamo[-1]
@@ -669,7 +669,7 @@ def norm13(tokens: List[MorphToken]) -> List[MorphToken]:
             curr_jamo = curr_token.jamo_str  # 갱신된 jamo_str 사용
             next_cho = next_token.jamo_str[0]
 
-            is_functional = next_token.pos.startswith(('J', 'E')) or next_token.pos in DERIV_SUFFIX_TAGS
+            is_functional = next_token.pos.startswith(('J', 'E', "VCP")) or next_token.pos in DERIV_SUFFIX_TAGS
 
             if next_cho == O_IEUNG and is_functional:
                 curr_jong = curr_jamo[-1]
@@ -739,7 +739,7 @@ def norm14(tokens: List[MorphToken]) -> List[MorphToken]:
         curr_jamo = curr_token.jamo_str
         next_cho = next_token.jamo_str[0]
 
-        is_functional = next_token.pos.startswith(('J', 'E')) or next_token.pos in DERIV_SUFFIX_TAGS
+        is_functional = next_token.pos.startswith(('J', 'E', "VCP")) or next_token.pos in DERIV_SUFFIX_TAGS
 
         if next_cho == O_IEUNG and is_functional:
             curr_jong = curr_jamo[-1]
@@ -841,7 +841,7 @@ def norm15(tokens: List[MorphToken]) -> List[MorphToken]:
 
         # 모음(ㅏ, ㅓ, ㅗ, ㅜ, ㅟ)으로 시작하는 실질 형태소인지 확인
         if next_cho == O_IEUNG and next_joong in _TARGET_VOWELS_REAL_MORPH:
-            is_functional = next_token.pos.startswith(('J', 'E')) or next_token.pos in DERIV_SUFFIX_TAGS
+            is_functional = next_token.pos.startswith(('J', 'E', "VCP")) or next_token.pos in DERIV_SUFFIX_TAGS
 
             if not is_functional:
                 if curr_jong in _REP_ONSET_REAL_MORPH:
