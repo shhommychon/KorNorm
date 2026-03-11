@@ -5,7 +5,7 @@
 
 from typing import List
 from kornorm.phonology.common import MorphToken
-from kornorm.phonology.common import DERIV_SUFFIX_TAGS, SUBSTANTIVE_TAGS
+from kornorm.phonology.common import DERIV_SUFFIX_TAGS, SUBSTANTIVE_TAGS, _is_functional
 
 from kornorm.utils.jamo import (
     O_GIYEOK, O_SSANGGIYEOK, O_NIEUN, O_DIGEUT, O_SSANGDIGEUT,
@@ -13,8 +13,8 @@ from kornorm.utils.jamo import (
     O_IEUNG, O_JIEUT, O_SSANGJIEUT, O_CHIEUT, O_KIEUK,
     O_TIEUT, O_PIEUP, O_HIEUT,
 
-    N_A, N_AE, N_EO, N_E, N_YEO, N_O, N_WA, N_WAE, N_OE,
-    N_U, N_WEO, N_WE, N_WI, N_EU, N_UI, N_I,
+    N_A, N_AE, N_EO, N_E, N_O, N_WA, N_WAE, N_OE,
+    N_U, N_WEO, N_WE, N_WI, N_EU, N_UI,
 
     C_NONE,
     C_GIYEOK, C_SSANGGIYEOK, C_GIYEOK_SIOT, C_NIEUN, C_NIEUN_JIEUT,
@@ -24,42 +24,6 @@ from kornorm.utils.jamo import (
     C_IEUNG, C_JIEUT, C_CHIEUT, C_KIEUK, C_TIEUT,
     C_PIEUP, C_HIEUT,
 )
-
-# [공용 헬퍼 Shared helper]
-#
-# 연음(제12항 4, 제13항, 제14항)과 절음(제15항)은 모두 "뒤 형태소가 형식 형태소인지"를 기준으로
-# 갈라지므로, 판별 로직을 하나로 모아 규칙 간 불일치를 방지한다.
-_FUNCTIONAL_ONSET_VOWELS = (N_A, N_EO, N_YEO, N_EU, N_I)  # 실제 어미가 취할 수 있는 어두 모음 (아/어/여/으/이 계열)
-def _is_functional(curr_token: MorphToken, next_token: MorphToken) -> bool:
-    """
-    뒤 토큰이 형식 형태소(조사, 어미, 접미사, 서술격 조사)인지 판별합니다.
-
-    pecab의 대표적인 태깅 이상 두 가지를 함께 보정합니다:
-    - 모음으로 시작하는 어미(E*) 태그가 ㅏ, ㅓ, ㅕ, ㅡ, ㅣ 이외의 모음으로 시작하면 실질 형태소의
-      오태깅으로 간주합니다 (예: "겉옷" -> 겉/VA + 옷/EC. 실제 어미는 그런 모음으로 시작하지 않음).
-    - 용언 어간 바로 뒤의 단음절 '음'이 명사(NNG)로 오분석되면 명사형 전성어미(ETN)로 간주합니다
-      (예: "헛웃음을" -> 웃/VV+EP + 음/NNG).
-
-    Args:
-        curr_token (MorphToken): 판별 문맥이 되는 앞 토큰.
-        next_token (MorphToken): 형식 형태소 여부를 판별할 뒤 토큰.
-
-    Returns:
-        bool: 형식 형태소로 판단되면 True.
-    """
-    next_jamo = next_token.jamo_str
-    if next_token.pos.startswith('E') and len(next_jamo) >= 2:
-        if next_jamo[0] == O_IEUNG and next_jamo[1] not in _FUNCTIONAL_ONSET_VOWELS:
-            return False
-
-    if next_token.pos.startswith(('J', 'E', "VCP")) or next_token.pos in DERIV_SUFFIX_TAGS:
-        return True
-
-    if next_token.surface == '음' and curr_token.pos.startswith('V'):
-        return True
-
-    return False
-
 
 # [제8항 Norm 8]
 #
@@ -754,6 +718,10 @@ def norm14(tokens: List[MorphToken]) -> List[MorphToken]:
 
     'ㅅ'은 된소리 'ㅆ'으로 발음합니다.
 
+    토큰 내부(예: '거침없이')와 토큰 경계(예: '앉아', '값을') 환경을 나누어 처리합니다.
+    형태소 분석기가 파생어 전체를 한 토큰으로 묶는 경우(예: 거침없이/MAG) 겹받침 연음 경계가
+    토큰 내부에 숨기 때문에, 토큰 경계 순회만으로는 연음이 누락됩니다.
+
     Ref:
         g2pk.regular.link2()
         — https://github.com/Kyubyong/g2pK/blob/master/g2pk/regular.py#L35-L52
@@ -766,24 +734,44 @@ def norm14(tokens: List[MorphToken]) -> List[MorphToken]:
     Returns:
         List[MorphToken]: 겹받침의 뒤 자음이 모음의 초성으로 연음된 리스트.
     """
-    for i in range(len(tokens) - 1):
+    for i in range(len(tokens)):
         curr_token = tokens[i]
-        next_token = tokens[i+1]
-
-        if curr_token.pos.startswith('S') or next_token.pos.startswith('S'):
+        if curr_token.pos.startswith('S'):
             continue
 
-        curr_jamo = curr_token.jamo_str
-        next_cho = next_token.jamo_str[0]
+        # 1. 토큰 내부(Intra-token) 처리
+        jamo = curr_token.jamo_str
+        if len(jamo) >= 6:
+            new_jamo = ''
+            for j in range(0, len(jamo), 3):
+                cho, joong, jong = jamo[j:j+3]
+                if j >= 3:
+                    prev_jong = new_jamo[-1]
+                    # 단일 토큰 내부는 기본적으로 어간+접미사 결합으로 간주 (예: 거침없이/MAG -> [거치멉씨])
+                    if cho == O_IEUNG and prev_jong in _GYUB_TO_SPLIT:
+                        remain_jong, move_cho = _GYUB_TO_SPLIT[prev_jong]
+                        new_jamo = new_jamo[:-1] + remain_jong
+                        cho = move_cho
+                new_jamo += cho + joong + jong
+            curr_token.jamo_str = new_jamo
 
-        is_functional = _is_functional(curr_token, next_token)
+        # 2. 토큰 경계(Inter-token) 처리
+        if i < len(tokens) - 1:
+            next_token = tokens[i+1]
+            if next_token.pos.startswith('S'):
+                continue
 
-        if next_cho == O_IEUNG and is_functional:
-            curr_jong = curr_jamo[-1]
-            if curr_jong in _GYUB_TO_SPLIT:
-                remain_jong, move_cho = _GYUB_TO_SPLIT[curr_jong]
-                curr_token.jamo_str = curr_jamo[:-1] + remain_jong
-                next_token.jamo_str = move_cho + next_token.jamo_str[1:]
+            curr_jamo = curr_token.jamo_str  # 갱신된 jamo_str 사용
+            next_cho = next_token.jamo_str[0]
+
+            is_functional = _is_functional(curr_token, next_token)
+
+            if next_cho == O_IEUNG and is_functional:
+                curr_jong = curr_jamo[-1]
+                if curr_jong in _GYUB_TO_SPLIT:
+                    remain_jong, move_cho = _GYUB_TO_SPLIT[curr_jong]
+                    curr_token.jamo_str = curr_jamo[:-1] + remain_jong
+                    next_token.jamo_str = move_cho + next_token.jamo_str[1:]
 
     return tokens
 

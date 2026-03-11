@@ -151,6 +151,10 @@ def norm29(tokens: List[MorphToken]) -> List[MorphToken]:
                 next_cho = jamo_list[j]
                 next_joong = jamo_list[j + 1] if j + 1 < len(jamo_list) else ""
 
+                # 어말의 단음절 '이'(파생 접미사 '-이') 경계는 ㄴ첨가 대상이 아니다 (예: 미닫이[미다지])
+                if j == len(jamo_list) - 3 and next_cho == O_IEUNG and next_joong == N_I and jamo_list[j + 2] == C_NONE:
+                    continue
+
                 # 앞 단어의 끝이 자음(받침 있음)인지 확인
                 if prev_jong != C_NONE:
                     # 뒤 단어의 첫 음절이 '이, 야, 여, 요, 유'인지 확인
@@ -176,6 +180,11 @@ def norm29(tokens: List[MorphToken]) -> List[MorphToken]:
             # '있-'은 '이'로 시작하는 실질 형태소지만 ㄴ첨가 없이 절음·연음되는 어휘적 예외
             # (제15항 다만 맛있다[마싣따], 붙임 값있는[가빈는] — 해설 참조)
             if next_token.surface.startswith("있"):
+                continue
+
+            # 단음절 '이'는 대개 파생 접미사 '-이'의 오분석이며(굳이[구지], 벼훑이[벼훌치] — 제17항 예시),
+            # 치아 '이'의 합성어는 표기부터 '니'(앞니, 덧니)이므로 ㄴ첨가 대상 실질 형태소로 보지 않는다.
+            if next_token.surface == '이':
                 continue
 
             is_curr_valid = curr_token.pos.startswith(SUBSTANTIVE_TAGS) or curr_token.pos == "XPN"

@@ -5,7 +5,7 @@
 
 from typing import List
 from kornorm.phonology.common import MorphToken
-from kornorm.phonology.common import DERIV_SUFFIX_TAGS
+from kornorm.phonology.common import DERIV_SUFFIX_TAGS, _is_functional
 
 from kornorm.utils.jamo import (
     O_NIEUN, O_RIEUL, O_IEUNG, O_JIEUT, O_CHIEUT, O_HIEUT,
@@ -37,6 +37,10 @@ def norm17(tokens: List[MorphToken]) -> List[MorphToken]:
 
     구개음화 관련 메소드 입니다.
 
+    토큰 내부(예: '굳이', '미닫이')와 토큰 경계(예: '밭이') 환경을 나누어 처리합니다.
+    형태소 분석기가 어간+접미사를 한 토큰으로 묶는 경우(예: 굳이/MAG) 구개음화 경계가 토큰 내부에
+    숨기 때문에, 토큰 경계 순회만으로는 후속 연음(제13항)이 ㄷ을 제 음가로 옮겨 [구디]가 됩니다.
+
     g2pK의 로직을 반영하여 'ㅣ'뿐만 아니라 'ㅕ'(ㅣ+ㅓ)가 결합할 때도 적용합니다.
 
     Ref:
@@ -51,44 +55,67 @@ def norm17(tokens: List[MorphToken]) -> List[MorphToken]:
     Returns:
         List[MorphToken]: "ㄷ, ㅌ(ㄾ)" 받침이 'ㅣ'나 'ㅕ'와 결합하여 [ㅈ, ㅊ]으로 구개음화된 토큰 리스트.
     """
-    for i in range(len(tokens) - 1):
+    for i in range(len(tokens)):
         curr_token = tokens[i]
         if curr_token.pos.startswith('S'):
             continue
 
-        next_idx = i + 1
-        if tokens[next_idx].pos == "SP":
-            continue # 구개음화는 단어 내부(조사/접미사 결합)에서 일어나므로 공백을 넘지 않음
+        # 1. 토큰 내부(Intra-token) 처리
+        jamo = curr_token.jamo_str
+        if len(jamo) >= 6:
+            new_jamo = ''
+            for j in range(0, len(jamo), 3):
+                cho, joong, jong = jamo[j:j+3]
+                if j >= 3:
+                    prev_jong = new_jamo[-1]
+                    # 단일 토큰 내부는 기본적으로 어간+접미사 결합으로 간주 (예: 굳이/MAG -> [구지], 같이/MAG -> [가치])
+                    if cho == O_IEUNG and joong in (N_I, N_YEO):
+                        if prev_jong == C_DIGEUT:
+                            new_jamo = new_jamo[:-1] + C_NONE
+                            cho = O_JIEUT
+                        elif prev_jong == C_TIEUT:
+                            new_jamo = new_jamo[:-1] + C_NONE
+                            cho = O_CHIEUT
+                        elif prev_jong == C_RIEUL_TIEUT:
+                            new_jamo = new_jamo[:-1] + C_RIEUL
+                            cho = O_CHIEUT
+                new_jamo += cho + joong + jong
+            curr_token.jamo_str = new_jamo
 
-        next_token = tokens[next_idx]
-        if next_token.pos.startswith('S'):
-            continue
+        # 2. 토큰 경계(Inter-token) 처리
+        if i < len(tokens) - 1:
+            next_idx = i + 1
+            if tokens[next_idx].pos == "SP":
+                continue # 구개음화는 단어 내부(조사/접미사 결합)에서 일어나므로 공백을 넘지 않음
 
-        is_functional = next_token.pos.startswith(('J', 'E')) or next_token.pos in DERIV_SUFFIX_TAGS
-        if not is_functional:
-            continue
+            next_token = tokens[next_idx]
+            if next_token.pos.startswith('S'):
+                continue
 
-        curr_jamo = curr_token.jamo_str
-        curr_jong = curr_jamo[-1]
+            if not _is_functional(curr_token, next_token):
+                continue
 
-        next_jamo = next_token.jamo_str
-        next_cho = next_jamo[0]
-        next_joong = next_jamo[1] if len(next_jamo) >= 2 else ""
+            curr_jamo = curr_token.jamo_str  # 갱신된 jamo_str 사용
+            curr_jong = curr_jamo[-1]
 
-        # 'ㅇ' + 'ㅣ' 또는 'ㅕ'
-        if next_cho == O_IEUNG and next_joong in (N_I, N_YEO):
-            if curr_jong == C_DIGEUT:
-                # ㄷ -> ㅈ
-                curr_token.jamo_str = curr_jamo[:-1] + C_NONE
-                next_token.jamo_str = O_JIEUT + next_jamo[1:]
-            elif curr_jong == C_TIEUT:
-                # ㅌ -> ㅊ
-                curr_token.jamo_str = curr_jamo[:-1] + C_NONE
-                next_token.jamo_str = O_CHIEUT + next_jamo[1:]
-            elif curr_jong == C_RIEUL_TIEUT:
-                # ㄾ -> ㄹ, ㅊ
-                curr_token.jamo_str = curr_jamo[:-1] + C_RIEUL
-                next_token.jamo_str = O_CHIEUT + next_jamo[1:]
+            next_jamo = next_token.jamo_str
+            next_cho = next_jamo[0]
+            next_joong = next_jamo[1] if len(next_jamo) >= 2 else ""
+
+            # 'ㅇ' + 'ㅣ' 또는 'ㅕ'
+            if next_cho == O_IEUNG and next_joong in (N_I, N_YEO):
+                if curr_jong == C_DIGEUT:
+                    # ㄷ -> ㅈ
+                    curr_token.jamo_str = curr_jamo[:-1] + C_NONE
+                    next_token.jamo_str = O_JIEUT + next_jamo[1:]
+                elif curr_jong == C_TIEUT:
+                    # ㅌ -> ㅊ
+                    curr_token.jamo_str = curr_jamo[:-1] + C_NONE
+                    next_token.jamo_str = O_CHIEUT + next_jamo[1:]
+                elif curr_jong == C_RIEUL_TIEUT:
+                    # ㄾ -> ㄹ, ㅊ
+                    curr_token.jamo_str = curr_jamo[:-1] + C_RIEUL
+                    next_token.jamo_str = O_CHIEUT + next_jamo[1:]
 
     return tokens
 
@@ -108,6 +135,10 @@ def norm17_a(tokens: List[MorphToken]) -> List[MorphToken]:
     """
     제17항 붙임. ‘ㄷ’ 뒤에 접미사 ‘히’가 결합되어 ‘티’를 이루는 것은 [치]로 발음합니다.
 
+    토큰 내부(예: '굳히다' -> 굳히/VV)와 토큰 경계(예: '닫히다' -> 닫/VV + 히다/EC) 환경을 나누어
+    처리합니다. 본 함수는 2D LUT의 일반 격음화(ㄷ+ㅎ -> ㅌ, 예: 맏형[마텽])보다 먼저 실행되어
+    접미사 '히' 환경을 선점해야 합니다.
+
     Ref:
         zeroth genPhoneSeq.py
         — https://github.com/goodatlas/zeroth/blob/master/s5/data/local/lm/buildLM/_scripts_/genPhoneSeq.py#L461-L468
@@ -118,36 +149,55 @@ def norm17_a(tokens: List[MorphToken]) -> List[MorphToken]:
     Returns:
         List[MorphToken]: 'ㄷ' 뒤에 접미사 '히'가 결합하여 [치]로 구개음화된 토큰 리스트.
     """
-    for i in range(len(tokens) - 1):
+    for i in range(len(tokens)):
         curr_token = tokens[i]
         if curr_token.pos.startswith('S'):
             continue
 
-        next_idx = i + 1
-        if tokens[next_idx].pos == "SP":
-            continue
+        # 1. 토큰 내부(Intra-token) 처리
+        # 피동·사동 접미사 '-히-'는 용언 활용에서만 나타나므로 용언(V*) 토큰에 한정한다.
+        # 명사 내부의 ㄷ+ㅎ은 실질 형태소 경계로, 제12항 붙임 1의 일반 격음화 대상이다 (예: 맏형[마텽]).
+        jamo = curr_token.jamo_str
+        if len(jamo) >= 6 and curr_token.pos.startswith('V'):
+            new_jamo = ''
+            for j in range(0, len(jamo), 3):
+                cho, joong, jong = jamo[j:j+3]
+                if j >= 3:
+                    prev_jong = new_jamo[-1]
+                    # 단일 용언 토큰 내부는 어간+접미사 결합으로 간주 (예: 굳히/VV -> [구치])
+                    if cho == O_HIEUT and joong in (N_I, N_YEO):
+                        if prev_jong == C_DIGEUT:
+                            new_jamo = new_jamo[:-1] + C_NONE
+                            cho = O_CHIEUT
+                new_jamo += cho + joong + jong
+            curr_token.jamo_str = new_jamo
 
-        next_token = tokens[next_idx]
-        if next_token.pos.startswith('S'):
-            continue
+        # 2. 토큰 경계(Inter-token) 처리
+        if i < len(tokens) - 1:
+            next_idx = i + 1
+            if tokens[next_idx].pos == "SP":
+                continue
 
-        is_functional = next_token.pos.startswith(('J', 'E')) or next_token.pos in DERIV_SUFFIX_TAGS
-        if not is_functional:
-            continue
+            next_token = tokens[next_idx]
+            if next_token.pos.startswith('S'):
+                continue
 
-        curr_jamo = curr_token.jamo_str
-        curr_jong = curr_jamo[-1]
+            if not _is_functional(curr_token, next_token):
+                continue
 
-        next_jamo = next_token.jamo_str
-        next_cho = next_jamo[0]
-        next_joong = next_jamo[1] if len(next_jamo) >= 2 else ""
+            curr_jamo = curr_token.jamo_str  # 갱신된 jamo_str 사용
+            curr_jong = curr_jamo[-1]
 
-        # 'ㅎ' + 'ㅣ' 또는 'ㅕ'
-        if next_cho == O_HIEUT and next_joong in (N_I, N_YEO):
-            if curr_jong == C_DIGEUT:
-                # ㄷ + ㅎ -> ㅊ
-                curr_token.jamo_str = curr_jamo[:-1] + C_NONE
-                next_token.jamo_str = O_CHIEUT + next_jamo[1:]
+            next_jamo = next_token.jamo_str
+            next_cho = next_jamo[0]
+            next_joong = next_jamo[1] if len(next_jamo) >= 2 else ""
+
+            # 'ㅎ' + 'ㅣ' 또는 'ㅕ'
+            if next_cho == O_HIEUT and next_joong in (N_I, N_YEO):
+                if curr_jong == C_DIGEUT:
+                    # ㄷ + ㅎ -> ㅊ
+                    curr_token.jamo_str = curr_jamo[:-1] + C_NONE
+                    next_token.jamo_str = O_CHIEUT + next_jamo[1:]
 
     return tokens
 
