@@ -1039,7 +1039,9 @@ def norm16(tokens: List[MorphToken]) -> List[MorphToken]:
             curr_jamo = curr_token.jamo_str
             next_cho = next_token.jamo_str[0]
 
-            if next_cho == O_IEUNG and next_token.pos.startswith('J'):
+            # 조사(J*)만이 아니라 서술격 조사(디귿이다[디그시다])와 '을/ETN' 오태깅까지 포괄하도록
+            # 공용 형식 형태소 판별(_is_functional)을 사용한다.
+            if next_cho == O_IEUNG and _is_functional(curr_token, next_token):
                 curr_jong = curr_jamo[-1]
                 if curr_jong in _JAMO_NAME_EXCEPTIONS:
                     curr_token.jamo_str = curr_jamo[:-1] + _JAMO_NAME_EXCEPTIONS[curr_jong]
