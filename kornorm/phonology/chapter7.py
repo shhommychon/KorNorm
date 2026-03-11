@@ -140,7 +140,11 @@ def norm29(tokens: List[MorphToken]) -> List[MorphToken]:
             continue
 
         # 1. 단일 토큰 내부의 합성어 경계 처리 ("솜-이불"이 한 토큰으로 들어온 경우)
+        #    다만 2 조항: 사전 발음이 표기와 동일한 단어(등용문[등용문])는 "표기대로 발음"이라는
+        #    적극적 정보이므로, 합성어 경계가 있어도 ㄴ(ㄹ)을 첨가하지 않는다.
         internal_boundaries = _get_internal_boundaries(getattr(curr_token, "compound_structure", ''))
+        if getattr(curr_token, "pronunciation", '') == curr_token.surface:
+            internal_boundaries = []
         if internal_boundaries:
             jamo_list = list(curr_token.jamo_str)
             for bnd in internal_boundaries:
@@ -165,12 +169,14 @@ def norm29(tokens: List[MorphToken]) -> List[MorphToken]:
 
             curr_token.jamo_str = "".join(jamo_list)
 
-        # 2. 토큰 간 경계 처리 (띄어쓰기 포함, 구 구성 및 신조어 파생어 방어)
+        # 2. 토큰 간 경계 처리 (신조어 등 사전에 없는 합성/파생어가 토큰으로 쪼개진 경우 방어)
+        #    본항의 적용 범위는 붙여 쓰는 합성어·파생어이므로 무공백 경계로 한정한다.
+        #    공백을 넘는 붙임 2(두 단어를 한 마디로: 한 일[한닐], 할 일[할릴])는 어절 결속도가
+        #    필요한 조항이므로 통합 단계(rule_id x POS 결속도)로 이관한다. 무분별한 공백 통과는
+        #    느슨한 어절 경계에서 과발동한다 (예: "그냥 일하기가" -> [그냥 닐하기가]).
         if i < len(tokens) - 1:
             next_idx = i + 1
             if tokens[next_idx].pos == 'SP':
-                next_idx += 1
-            if next_idx >= len(tokens):
                 continue
 
             next_token = tokens[next_idx]
