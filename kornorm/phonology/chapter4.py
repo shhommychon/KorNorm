@@ -120,28 +120,56 @@ def norm10_p(tokens: List[MorphToken]) -> List[MorphToken]:
     Returns:
         List[MorphToken]: "밟-", "넓-"의 ㄼ 받침이 예외 조건에서 ㅂ으로 치환된 리스트.
     """
-    for i in range(len(tokens) - 1):
-        curr_token = tokens[i]
-        next_token = tokens[i+1]
-
-        if curr_token.pos.startswith('S') or next_token.pos.startswith('S'):
+    for i, token in enumerate(tokens):
+        if token.pos.startswith('S'):
             continue
 
-        if curr_token.pos.startswith('V'):
-            curr_jamo = curr_token.jamo_str
-            next_cho = next_token.jamo_str[0]
+        curr_jamo = token.jamo_str
 
-            # 1. "밟-" 처리 (자음 앞에서 [밥])
-            if curr_token.surface == "밟":
-                if next_cho not in (O_IEUNG, O_HIEUT):
-                    curr_token.jamo_str = curr_jamo[:-1] + C_BIEUP
+        # 1. "밟-" 처리
+        if token.pos.startswith('V') and token.surface == '밟':
+            # 다음 토큰들 중 공백이 아닌 첫 형태소 탐색
+            next_cho = ''
+            for next_token in tokens[i+1:]:
+                if not next_token.pos.startswith('S'):
+                    next_cho = next_token.jamo_str[0]
+                    break
+            
+            if not next_cho or next_cho not in (O_IEUNG, O_HIEUT):
+                token.jamo_str = curr_jamo[:-1] + C_BIEUP
 
-            # 2. "넓-" 처리 (넓죽하다, 넓둥글다 등)
-            elif curr_token.surface == "넓":
-                next_joong = next_token.jamo_str[1] if len(next_token.jamo_str) >= 2 else ""
-                if next_cho in (O_JIEUT, O_SSANGJIEUT, O_DIGEUT, O_SSANGDIGEUT) and next_joong == N_U:
-                    curr_token.jamo_str = curr_jamo[:-1] + C_BIEUP
+        # 2. "넓-" 처리
+        elif '넓' in token.surface:
+            new_jamo = ''
+            j = 0
+            while j < len(curr_jamo):
+                cho = curr_jamo[j]
+                joong = curr_jamo[j+1] if j+1 < len(curr_jamo) else ''
+                jong = curr_jamo[j+2] if j+2 < len(curr_jamo) else ''
+                
+                if cho == O_NIEUN and joong == N_EO and jong == C_RIEUL_BIEUP:
+                    # 현재 위치가 단일 토큰 내부인지, 다음 토큰을 봐야 하는지 판단
+                    if j + 3 < len(curr_jamo):
+                        # 토큰 내부(Intra-token)에 다음 글자가 있음
+                        next_cho = curr_jamo[j+3]
+                        next_joong = curr_jamo[j+4] if j+4 < len(curr_jamo) else ''
+                    else:
+                        # 토큰 경계(Inter-token)에 있음: 다음 토큰 탐색
+                        next_cho = ''
+                        next_joong = ''
+                        for next_token in tokens[i+1:]:
+                            if not next_token.pos.startswith('S'):
+                                next_cho = next_token.jamo_str[0]
+                                next_joong = next_token.jamo_str[1] if len(next_token.jamo_str) >= 2 else ''
+                                break
 
+                    if next_cho in (O_JIEUT, O_SSANGJIEUT, O_DIGEUT, O_SSANGDIGEUT) and next_joong == N_U:
+                        jong = C_BIEUP
+                        
+                new_jamo += cho + joong + jong
+                j += 3
+            token.jamo_str = new_jamo
+    
     return tokens
 
 
