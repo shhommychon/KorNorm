@@ -166,8 +166,8 @@ class TestPhoneNorm12(unittest.TestCase):
 
     def test_norm12_1_sentences(self):
         """통합 엔진 검증: 제12항 1 본항 포함 문장"""
-        sentence = self._strip_punctuation("짐을 내려 놓고 좋던 시절을 떠올리며 지식을 쌓지 않으면, 결국 남는 것이 많고 적음을 떠나 아무것도 않던 것과 같아 마음만 닳지 않겠는가.")
-        expected = "지믈 내려 노코 조턴 시저를 떠올리며 지시글 싸치 아느면 결국 남는 거시 만코 저그믈 떠나 아무걷또 안턴 걷꽈 가타 마음만 달치 안켄는가"
+        sentence = self._strip_punctuation("짐을 내려 놓고 좋던 시절을 떠올리며 지식을 쌓지 않으면, 끝내 남는 것이 많고 적음을 떠나 아무것도 않던 것과 같아 마음만 닳지 않겠는가.")
+        expected = "지믈 내려 노코 조턴 시저를 떠올리며 지시글 싸치 아느면 끈내 남는 거시 만코 저그믈 떠나 아무걷또 안턴 걷꽈 가타 마음만 달치 안켄는가"
         actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
         

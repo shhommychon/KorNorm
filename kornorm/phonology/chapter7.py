@@ -5,7 +5,7 @@
 
 from typing import List
 from kornorm.phonology.common import MorphToken
-from kornorm.phonology.common import FORTIS_MAPPING, DERIV_SUFFIX_TAGS, SUBSTANTIVE_TAGS
+from kornorm.phonology.common import FORTIS_MAPPING, DERIV_SUFFIX_TAGS, SUBSTANTIVE_TAGS, _is_cohesive_boundary
 
 from kornorm.utils.jamo import (
     O_NIEUN, O_RIEUL, O_MIEUM, O_IEUNG,
@@ -170,14 +170,18 @@ def norm29(tokens: List[MorphToken]) -> List[MorphToken]:
             curr_token.jamo_str = "".join(jamo_list)
 
         # 2. 토큰 간 경계 처리 (신조어 등 사전에 없는 합성/파생어가 토큰으로 쪼개진 경우 방어)
-        #    본항의 적용 범위는 붙여 쓰는 합성어·파생어이므로 무공백 경계로 한정한다.
-        #    공백을 넘는 붙임 2(두 단어를 한 마디로: 한 일[한닐], 할 일[할릴])는 어절 결속도가
-        #    필요한 조항이므로 통합 단계(rule_id x POS 결속도)로 이관한다. 무분별한 공백 통과는
-        #    느슨한 어절 경계에서 과발동한다 (예: "그냥 일하기가" -> [그냥 닐하기가]).
+        #    본항의 적용 범위는 붙여 쓰는 합성어·파생어이므로 원칙적으로 무공백 경계로 한정하되,
+        #    붙임 2(두 단어를 이어서 한 마디로: 한 일[한닐], 할 일[할릴])는 어절 결속도가 인정되는
+        #    품사 쌍의 경계에서만 공백을 넘어 적용한다. 무분별한 공백 통과는 느슨한 어절 경계에서
+        #    과발동한다 (예: "그냥 일하기가" -> [그냥 닐하기가] — 부사+체언이라 결속도 판정에서 배제).
         if i < len(tokens) - 1:
             next_idx = i + 1
+            crosses_space = False
             if tokens[next_idx].pos == 'SP':
-                continue
+                if i + 2 >= len(tokens) or not _is_cohesive_boundary(curr_token, tokens[i + 2]):
+                    continue
+                next_idx = i + 2
+                crosses_space = True
 
             next_token = tokens[next_idx]
             if next_token.pos.startswith('S'):
@@ -193,8 +197,10 @@ def norm29(tokens: List[MorphToken]) -> List[MorphToken]:
             if next_token.surface == '이':
                 continue
 
-            is_curr_valid = curr_token.pos.startswith(SUBSTANTIVE_TAGS) or curr_token.pos == "XPN"
-            is_next_valid = next_token.pos.startswith(SUBSTANTIVE_TAGS) or next_token.pos in DERIV_SUFFIX_TAGS
+            # 결속도 판정을 통과한 공백 경계는 품사 쌍 검증을 이미 마친 것이므로 그대로 인정한다
+            # (예: "먹은 엿"의 앞 토큰은 어미(ETM)라 실질 형태소 검사로는 걸러진다).
+            is_curr_valid = crosses_space or curr_token.pos.startswith(SUBSTANTIVE_TAGS) or curr_token.pos == "XPN"
+            is_next_valid = crosses_space or next_token.pos.startswith(SUBSTANTIVE_TAGS) or next_token.pos in DERIV_SUFFIX_TAGS
 
             if is_curr_valid and is_next_valid:
                 curr_jong = curr_token.jamo_str[-1]

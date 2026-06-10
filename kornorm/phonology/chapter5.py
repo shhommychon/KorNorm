@@ -5,10 +5,11 @@
 
 from typing import List
 from kornorm.phonology.common import MorphToken
-from kornorm.phonology.common import DERIV_SUFFIX_TAGS, _is_functional
+from kornorm.phonology.common import DERIV_SUFFIX_TAGS, _is_functional, _is_tight_cohesive_boundary
+from kornorm.phonology.apply_lut import PHONOLOGY_LUT
 
 from kornorm.utils.jamo import (
-    O_NIEUN, O_RIEUL, O_IEUNG, O_JIEUT, O_CHIEUT, O_HIEUT,
+    O_NIEUN, O_MIEUM, O_RIEUL, O_IEUNG, O_JIEUT, O_CHIEUT, O_HIEUT,
 
     N_EO, N_YEO, N_O, N_YO, N_OE, N_I,
 
@@ -251,10 +252,47 @@ def norm18(tokens: List[MorphToken]) -> List[MorphToken]:
 # Ref:
 #   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a411
 def norm18_a(tokens: List[MorphToken]) -> List[MorphToken]:
-    raise NotImplementedError(
-        "cross-word nasalization (e.g., 밥 먹는다[밤멍는다]) is deferred until an eojeol-cohesion "
-        "based boundary policy is implemented (see `apply_phonology_lut` docstring)"
-    )
+    """
+    제18항 붙임. 두 단어를 이어서 한 마디로 발음하는 경우, 공백을 넘어 비음화를 적용합니다.
+
+    맨명사+용언으로 결속된 어절 경계(책 넣는다[챙넌는다], 밥 먹는다[밤멍는다])에서 앞 어절의
+    받침을 뒤 어절의 ㄴ/ㅁ 초성에 동화시킵니다. 변동 내용은 LUT에서 rule_id에 "18항"이 포함된
+    셀을 조회해 재사용하므로, 대표음화가 선행하는 복합 변동(옷 맞추다[온맏추다],
+    값 매기다[감매기다])도 별도 매핑 없이 한 번에 처리됩니다.
+
+    파이프라인에서는 norm29 이후에 호출해야 합니다. 제29항 붙임 2가 먼저 ㄴ을 첨가해야
+    "옷 입다[온닙따]"의 ㅅ+ㄴ 연쇄가 성립하기 때문입니다.
+
+    Args:
+        tokens (List[MorphToken]): 형태소 분석 및 자모 분해가 완료된 토큰 리스트.
+
+    Returns:
+        List[MorphToken]: 결속 경계의 비음화가 적용된 토큰 리스트.
+    """
+    for i in range(len(tokens) - 2):
+        curr_token = tokens[i]
+        if curr_token.pos.startswith('S') or not curr_token.jamo_str:
+            continue
+        if tokens[i + 1].pos != "SP":
+            continue
+        next_token = tokens[i + 2]
+        if next_token.pos.startswith('S') or not next_token.jamo_str:
+            continue
+        if not _is_tight_cohesive_boundary(curr_token, next_token):
+            continue
+
+        next_cho = next_token.jamo_str[0]
+        if next_cho not in (O_NIEUN, O_MIEUM):
+            continue
+
+        rule_info = PHONOLOGY_LUT.get(curr_token.jamo_str[-1], {}).get(next_cho)
+        if rule_info is None or "18항" not in rule_info[2]:
+            continue
+
+        new_jong, new_cho, _ = rule_info
+        curr_token.jamo_str = curr_token.jamo_str[:-1] + new_jong
+        next_token.jamo_str = new_cho + next_token.jamo_str[1:]
+    return tokens
 
 
 # [제19항 Norm 19]

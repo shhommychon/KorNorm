@@ -17,7 +17,7 @@ from kornorm.phonology.chapter4 import (
     norm10_p, norm11_p, norm12_1_c, norm12_1_a2, norm12_4, norm13, norm14, norm15, norm15_p, norm16,
 )
 from kornorm.phonology.chapter5 import (
-    norm17, norm17_a, norm20_p,
+    norm17, norm17_a, norm18_a, norm20_p,
 )
 from kornorm.phonology.chapter6 import (
     norm24, norm25, norm26, norm27, norm27_a,
@@ -249,6 +249,10 @@ class PhonologicProcessor:
 
         tokens = norm12_1_c(tokens)
         tokens = norm12_1_a2(tokens)
+
+        # 제18항 붙임: 결속된 어절 경계(맨명사+용언)의 공백 너머 비음화.
+        # 위의 norm29(제29항 붙임 2)가 먼저 ㄴ을 첨가해야 "옷 입다[온닙따]"의 ㅅ+ㄴ 연쇄가 성립한다.
+        tokens = norm18_a(tokens)
 
         # 5. 메인 O(1) 2D LUT 적용 (일반 자음 동화, 비음화, 유음화 등)
         # 공백(어절 경계)은 어말로 취급한다. 공백을 넘는 변동은 규칙별 전용 함수(norm15, norm12_1_a2, norm27 등)의 소관.
