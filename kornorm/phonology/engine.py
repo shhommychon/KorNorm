@@ -11,7 +11,7 @@ from kornorm.utils.jamo import decompose, join_jamos, to_compat_jamo
 from kornorm.phonology.common import MorphToken
 from kornorm.phonology.apply_lut import apply_phonology_lut
 from kornorm.phonology.chapter2 import (
-    norm5_p1, norm5_p2, norm5_p3, norm5_p4_1, norm5_p4_2,
+    norm5_p1, norm5_p2, norm5_p3,
 )
 from kornorm.phonology.chapter4 import (
     norm10_p, norm11_p, norm12_1_c, norm12_1_a2, norm12_4, norm13, norm14, norm15, norm15_p, norm16,
@@ -77,6 +77,9 @@ def apply_stdict_pronunciation(tokens: List[MorphToken]) -> List[MorphToken]:
 
         new_jamo = decompose(pron)
         token.jamo_str = new_jamo[:-1] + token.jamo_str[-1]
+        # 사전 발음이 확정된 토큰임을 표시한다. 표기 기준 조항(제5항 다만 3 등)이
+        # 발음 유래 자모를 재변형하지 않도록 하는 가드로 쓰인다 (예: 협의[혀븨] 유지).
+        token.stdict_applied = True
 
     return tokens
 
@@ -222,10 +225,13 @@ class PhonologicProcessor:
 
         # 4. 표준 발음 규칙 적용
         tokens = norm5_p1(tokens)
+        # 제5항 다만 2(ㅖ->ㅔ)도 허용 조항이나, 예사말에서 [ㅔ]가 압도적인 현실을 따라
+        # 전사 관례로 채택한 의도적 예외이다 (계->[게], 단 '예·례'는 원칙대로 유지).
         tokens = norm5_p2(tokens)
         tokens = norm5_p3(tokens)
-        tokens = norm5_p4_2(tokens)
-        tokens = norm5_p4_1(tokens)
+        # 제5항 다만 4(비어두 '의'->[이], 조사 '의'->[에])는 허용 조항이므로 기본 파이프라인에서는
+        # 원칙형([의])을 유지한다. 허용형이 필요하면 본 클래스를 상속받아 chapter2의
+        # norm5_p4_1/norm5_p4_2를 파이프라인에 추가하십시오.
         # 제22항 본항(어->여) 및 붙임(오->요)은 허용 조항이므로 기본 파이프라인에서는 원칙형을 유지한다.
         # 허용형이 필요하면 본 클래스를 상속받아 chapter5의 norm22/norm22_a를 파이프라인에 추가하십시오.
 

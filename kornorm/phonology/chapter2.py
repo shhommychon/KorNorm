@@ -165,7 +165,7 @@ def norm5_p2(
 # 자음을 첫소리로 가지고 있는 음절의 ‘ㅢ’는 [ㅣ]로 발음한다.
 # ‘ㅢ’ in syllables that have a consonant as the initial sound is pronounced as [ㅣ].
 #
-#     닐리리
+#     늴리리
 #     닁큼
 #     무늬
 #     띄어쓰기
@@ -196,6 +196,11 @@ def norm5_p3(tokens: List[MorphToken]) -> List[MorphToken]:
     """
     for token in tokens:
         if token.pos.startswith('S'): continue # 공백(SP), 영문(SL), 숫자(SN), 기호(SY) 등 자모 치환에서 제외
+
+        # 본 조항은 표기 기준이므로, 사전 발음이 선적용된 토큰의 자음+ㅢ는 연음 유래의
+        # 원칙형(협의[혀븨])으로 보고 재변형하지 않는다.
+        if getattr(token, "stdict_applied", False):
+            continue
 
         jamo = token.jamo_str
         new_jamo = ''

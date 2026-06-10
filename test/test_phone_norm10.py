@@ -211,8 +211,8 @@ class TestPhoneNorm10(unittest.TestCase):
 
     def test_norm10_proviso_sentences(self):
         """통합 엔진 검증: 제10항 다만 예외 포함 문장"""
-        sentence = self._strip_punctuation("그는 드넓죽 넓죽 넓쭉하고 넓둥글 넓뚱글다 싶은 돌을 밟고 서서, 다른 사람의 발을 밟지 않게 조심하며 발 밑을 밟.")
-        expected = "그는 드넙쭉 넙쭉 넙쭈카고 넙뚱글 넙뚱글다 시픈 도를 밥꼬 서서 다른 사라메 바를 밥찌 안케 조심하며 발 미틀 밥"
+        sentence = self._strip_punctuation("그는 드넓죽 넓죽 넓쭉하고 넓둥글 넓뚱글다 싶은 돌을 밟고 서서, 다른 사람 발을 밟지 않게 조심하며 발 밑을 밟.")
+        expected = "그는 드넙쭉 넙쭉 넙쭈카고 넙뚱글 넙뚱글다 시픈 도를 밥꼬 서서 다른 사람 바를 밥찌 안케 조심하며 발 미틀 밥"
         actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
         

@@ -200,10 +200,11 @@ class TestPhoneNorm5(unittest.TestCase):
 
     def test_norm5_proviso2_sentence(self):
         """통합 엔진 검증: 제5항 다만 2 케이스 포함 문장"""
-        sentence = self._strip_punctuation("오랜 몌별의 아픔을 간직하고 계시다는 할머니께, 한 계집아이가 지혜를 발휘해 출입문 개폐와 연계된 스마트 시계를 선물하며 큰 혜택을 드렸다.")
-        # 참고: '몌별의', '계집아이가', '개폐와', '연계된', '시계를', '혜택을' 에서 'ㅖ'가 'ㅔ'로 변하고,
-        # 이외의 연음(13항)과 '의' 발음(5항 다만 4) 등이 모두 적용된 최종 발음을 예상합니다.
-        expected = "오랜 메벼레 아프믈 간지카고 게시다는 할머니께 한 게지바이가 지헤를 발휘해 추림문 개페와 연게된 스마트 시게를 선물하며 큰 헤태글 드렫따"
+        sentence = self._strip_punctuation("오랜 몌별이 남긴 아픔을 간직하고 계시다는 할머니께, 한 계집아이가 지혜를 발휘해 출입문 개폐와 연계된 스마트 시계를 선물하며 큰 혜택을 드렸다.")
+        # 참고: '몌별이', '계집아이가', '개폐와', '연계된', '시계를', '혜택을' 에서 'ㅖ'가 'ㅔ'로 변하고,
+        # 이외의 연음(13항) 등이 모두 적용된 최종 발음을 예상합니다.
+        # (받침 뒤 조사 '의'는 연음 시 ㄹ+ㅢ의 원칙형 전사가 불확정이라 작문에서 회피한다.)
+        expected = "오랜 메벼리 남긴 아프믈 간지카고 게시다는 할머니께 한 게지바이가 지헤를 발휘해 추림문 개페와 연게된 스마트 시게를 선물하며 큰 헤태글 드렫따"
         actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
         
@@ -217,7 +218,7 @@ class TestPhoneNorm5(unittest.TestCase):
     def test_norm5_proviso3_words(self):
         """개별 단어 검증: 자음을 첫소리로 가지는 음절의 ㅢ"""
         cases = {
-            "닐리리": "닐리리", # 원형 그대로
+            "늴리리": "닐리리",
             "닁큼": "닝큼",
             "무늬": "무니",
             "띄어쓰기": "띠어쓰기",
@@ -242,7 +243,7 @@ class TestPhoneNorm5(unittest.TestCase):
     def test_norm5_proviso3_sentence(self):
         """통합 엔진 검증: 제5항 다만 3 케이스 포함 문장"""
         sentence = self._strip_punctuation("희망을 품고 닁큼 달려가 하얗게 희어 빛나는 무늬의 안경을 씌어 주며 희떱다고 장난을 치니, 마음이 확 틔어 마치 닐리리 가락에 맞춰 유희를 즐기듯 올바른 띄어쓰기로 글을 적었다.")
-        expected = "히망을 품고 닝큼 달려가 하야케 히어 빈나는 무니의 안경을 씨어 주며 히떱따고 장나늘 치니 마으미 확 티어 마치 닐리리 가라게 마춰 유히를 즐기듣 올바른 띠어쓰기로 그럴 저걷따"
+        expected = "히망을 품꼬 닝큼 달려가 하야케 히어 빈나는 무니의 안경을 씨어 주며 히떱따고 장나늘 치니 마으미 확 티어 마치 닐리리 가라게 맏춰 유히를 즐기드 돌바른 띠어쓰기로 그를 저걷따"
         actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
         
@@ -273,9 +274,11 @@ class TestPhoneNorm5(unittest.TestCase):
                 self.assert_kor_equal(expected, actual, log_only=False)
 
     def test_norm5_proviso4_1_sentence(self):
-        """통합 엔진 검증: 제5항 다만 4-1 케이스 포함 문장"""
+        """통합 엔진 검증: 제5항 다만 4-1 케이스 포함 문장 (기본 파이프라인은 원칙형 [의] 유지)"""
+        # 다만 4는 허용 조항이므로 기본 파이프라인은 원칙형을 유지한다 (허용형은 위 word 테스트에서
+        # norm5_p4_1 직접 호출로 검증). 협의[혀븨]는 사전 병기 [혀븨/혀비]의 원칙형.
         sentence = self._strip_punctuation("이번 강의의 핵심은 사소한 위험도 주의 깊게 살피고 부서 간 긴밀한 협의를 거치는 데 있습니다.")
-        expected = "이번 강이에 핵시믄 사소한 위엄도 주이 깁께 살피고 부서 간 긴밀한 혀비를 거치는 데 읻씀니다"
+        expected = "이번 강의의 핵씨믄 사소한 위험도 주의 깁께 살피고 부서 간 긴밀한 혀븨를 거치는 데 읻씀니다"
         actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
         
@@ -304,9 +307,11 @@ class TestPhoneNorm5(unittest.TestCase):
                 self.assert_kor_equal(expected, actual, log_only=False)
 
     def test_norm5_proviso4_2_sentence(self):
-        """통합 엔진 검증: 제5항 다만 4-2 케이스 포함 문장"""
+        """통합 엔진 검증: 제5항 다만 4-2 케이스 포함 문장 (기본 파이프라인은 원칙형 [의] 유지)"""
+        # 다만 4는 허용 조항이므로 기본 파이프라인은 원칙형을 유지한다 (허용형은 위 word 테스트에서
+        # norm5_p4_2 직접 호출로 검증).
         sentence = self._strip_punctuation("우리의 최종 목표는 지난번 강의의 핵심 규정을 실무에 완벽하게 적용하는 것입니다.")
-        expected = "우리에 최총 목표는 지난번 강이에 핵심 규정을 실무에 완벼카게 저굥하는 거심니다"
+        expected = "우리의 최종 목표는 지난번 강의의 핵씸 규정을 실무에 완벼카게 저굥하는 거심니다"
         actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
         
