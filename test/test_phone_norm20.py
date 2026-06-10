@@ -205,7 +205,7 @@ class TestPhoneNorm20(unittest.TestCase):
     def test_norm20_addendum_words(self):
         """개별 단어 검증: 제20항 붙임 (ㄶ, ㅀ 뒤 ㄴ의 유음화)"""
         cases = {
-            "앓는": "알른",
+            "닳는": "달른",
             "뚫는": "뚤른",
             "핥네": "할레",
         }
@@ -220,8 +220,8 @@ class TestPhoneNorm20(unittest.TestCase):
 
     def test_norm20_addendum_sentences(self):
         """통합 엔진 검증: 제20항 붙임 포함 문장"""
-        sentence = self._strip_punctuation("몸살을 앓는 사람이 구멍을 뚫는 동안 아이는 엿을 핥네 마네 투정을 부렸다.")
-        expected = "몸사를 알른 사라미 구멍을 뚤른 동안 아이는 여슬 할레 마네 투정을 부렫따"
+        sentence = self._strip_punctuation("굽이 닳는 구두를 신은 사람이 구멍을 뚫는 동안 아이는 엿을 핥네 마네 투정을 부렸다.")
+        expected = "구비 달른 구두를 시는 사라미 구멍을 뚤른 동안 아이는 여슬 할레 마네 투정을 부렫따"
         actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
 

@@ -8,6 +8,7 @@ from g2pk import G2p
 from kornorm.phonology.engine import PhonologicProcessor, apply_phonology
 from kornorm.phonology.apply_lut import apply_phonology_lut
 from kornorm.phonology.chapter4 import norm10_p
+from kornorm.phonology.chapter6 import norm24, norm25
 from kornorm.utils.jamo import join_jamos
 
 class TestPhoneNorm10(unittest.TestCase):
@@ -158,10 +159,12 @@ class TestPhoneNorm10(unittest.TestCase):
         for word, expected in cases.items():
             with self.subTest(word=word):
                 tokens = self.processor._tokenize_and_tag(word)
-                
+
+                tokens = norm24(tokens)
+                tokens = norm25(tokens)
                 res_tokens = apply_phonology_lut(tokens)
                 actual = self._tokens_to_hangul(res_tokens)
-                
+
                 g2pk_res = self.g2pk(word)
                 self.assert_kor_equal(expected, g2pk_res, log_only=True)
 
@@ -170,7 +173,7 @@ class TestPhoneNorm10(unittest.TestCase):
     def test_norm10_sentences(self):
         """통합 엔진 검증: 제10항 겹받침 대표음 조건 포함 문장"""
         sentence = self._strip_punctuation("넋과 혼을 다해 자리에 앉다. 여덟 명이 넓고 외곬으로 핥다 버린 값 없는 사과.")
-        expected = "넉꽈 호늘 다해 자리에 안따 여덜 명이 널꼬 외골스로 할따 버린 갑 엄는 사과"
+        expected = "넉꽈 호늘 다해 자리에 안따 여덜 명이 널꼬 외골쓰로 할따 버린 가 범는 사과"
         actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
         

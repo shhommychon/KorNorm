@@ -167,7 +167,7 @@ class TestPhoneNorm12(unittest.TestCase):
     def test_norm12_1_sentences(self):
         """통합 엔진 검증: 제12항 1 본항 포함 문장"""
         sentence = self._strip_punctuation("짐을 내려 놓고 좋던 시절을 떠올리며 지식을 쌓지 않으면, 결국 남는 것이 많고 적음을 떠나 아무것도 않던 것과 같아 마음만 닳지 않겠는가.")
-        expected = "지믈 내려 노코 조턴 시저를 떠올리며 지시글 싸치 아느면 결국 남는 거시 만코 저그믈 떠나 아무걷또 안턴 것꽈 가타 마음만 달치 안켄는가"
+        expected = "지믈 내려 노코 조턴 시저를 떠올리며 지시글 싸치 아느면 결국 남는 거시 만코 저그믈 떠나 아무걷또 안턴 걷꽈 가타 마음만 달치 안켄는가"
         actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
         
@@ -410,7 +410,7 @@ class TestPhoneNorm12(unittest.TestCase):
     def test_norm12_4_sentences(self):
         """통합 엔진 검증: 제12항 4 포함 문장"""
         sentence = self._strip_punctuation("새끼를 낳은 어미 고양이가 쥐를 놓아 주고 담장에 기대어 쌓이다 지쳐 잠들자, 나뭇잎이 많아 햇빛을 막아 주니 아무 일도 않은 채 닳아 버린 발톱을 숨기고 비가 와서 싫어도 참았다.")
-        expected = "새끼를 나은 어미 고양이가 쥐를 노아 주고 담장에 기대어 싸이다 지처 잠들자 나무니피 마나 해삐츨 마가 주니 아무 일도 아는 채 다라 버린 발토블 숨기고 비가 와서 시러도 차맏따"
+        expected = "새끼를 나은 어미 고양이가 쥐를 노아 주고 담장에 기대어 싸이다 지처 잠들자 나문니피 마나 해삐츨 마가 주니 아무 일도 아는 채 다라 버린 발토블 숨기고 비가 와서 시러도 차맏따"
         actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
         

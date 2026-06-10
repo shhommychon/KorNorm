@@ -8,6 +8,7 @@ from g2pk import G2p
 from kornorm.phonology.engine import PhonologicProcessor, apply_phonology
 from kornorm.phonology.apply_lut import apply_phonology_lut
 from kornorm.phonology.chapter4 import norm11_p
+from kornorm.phonology.chapter6 import norm24
 from kornorm.utils.jamo import join_jamos
 
 class TestPhoneNorm11(unittest.TestCase):
@@ -157,10 +158,11 @@ class TestPhoneNorm11(unittest.TestCase):
         for word, expected in cases.items():
             with self.subTest(word=word):
                 tokens = self.processor._tokenize_and_tag(word)
-                
+
+                tokens = norm24(tokens)
                 res_tokens = apply_phonology_lut(tokens)
                 actual = self._tokens_to_hangul(res_tokens)
-                
+
                 g2pk_res = self.g2pk(word)
                 self.assert_kor_equal(expected, g2pk_res, log_only=True)
 
@@ -169,7 +171,7 @@ class TestPhoneNorm11(unittest.TestCase):
     def test_norm11_sentences(self):
         """통합 엔진 검증: 제11항 겹받침 대표음 조건 포함 문장"""
         sentence = self._strip_punctuation("젊은 농부가 낡은 트랙터로 흙 틈새를 고르고 닭코기를 먹으며, 가끔은 시를 읊콘서트에서 읊다.")
-        expected = "절믄 농부가 날근 트랙터로 흑 틈새를 고르고 닥코기를 머그며 가끔은 시를 읍콘서뜨에서 읍따"
+        expected = "절믄 농부가 날근 트랙터로 흑 틈새를 고르고 닥코기를 머그며 가끄믄 시를 읍콘서트에서 읍따"
         actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
         

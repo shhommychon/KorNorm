@@ -319,7 +319,7 @@ def norm20(tokens: List[MorphToken]) -> List[MorphToken]:
 # 첫소리 ‘ㄴ’이 ‘ㄶ, ㅀ’ 뒤에 연결되는 경우에도 이에 준한다.
 # This also applies when the initial sound ‘ㄴ’ follows ‘ㄶ, ㅀ’.
 #
-#     앓는[알른]
+#     닳는[달른]
 #     뚫는[뚤른]
 #     핥네[할레]
 #
