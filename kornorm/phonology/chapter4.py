@@ -4,8 +4,8 @@
 #   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a390
 
 from typing import List
-from kornorm.phonology.engine import MorphToken
-from kornorm.phonology.common import DERIV_SUFFIX_TAGS
+from kornorm.phonology.common import MorphToken
+from kornorm.phonology.common import DERIV_SUFFIX_TAGS, SUBSTANTIVE_TAGS, _is_functional
 
 from kornorm.utils.jamo import (
     O_GIYEOK, O_SSANGGIYEOK, O_NIEUN, O_DIGEUT, O_SSANGDIGEUT,
@@ -13,7 +13,8 @@ from kornorm.utils.jamo import (
     O_IEUNG, O_JIEUT, O_SSANGJIEUT, O_CHIEUT, O_KIEUK,
     O_TIEUT, O_PIEUP, O_HIEUT,
 
-    N_A, N_EO, N_O, N_U, N_WI,
+    N_A, N_AE, N_EO, N_E, N_O, N_WA, N_WAE, N_OE,
+    N_U, N_WEO, N_WE, N_WI, N_EU, N_UI,
 
     C_NONE,
     C_GIYEOK, C_SSANGGIYEOK, C_GIYEOK_SIOT, C_NIEUN, C_NIEUN_JIEUT,
@@ -46,7 +47,7 @@ from kornorm.utils.jamo import (
 #     웃다[욷:따]
 #     있다[읻따]
 #     젖[젇]
-#     빛다[빋따]
+#     빚다[빋따]
 #     꽃[꼳]
 #     쫓다[쫃따]
 #     솥[솓]
@@ -120,28 +121,56 @@ def norm10_p(tokens: List[MorphToken]) -> List[MorphToken]:
     Returns:
         List[MorphToken]: "밟-", "넓-"의 ㄼ 받침이 예외 조건에서 ㅂ으로 치환된 리스트.
     """
-    for i in range(len(tokens) - 1):
-        curr_token = tokens[i]
-        next_token = tokens[i+1]
-
-        if curr_token.pos.startswith('S') or next_token.pos.startswith('S'):
+    for i, token in enumerate(tokens):
+        if token.pos.startswith('S'):
             continue
 
-        if curr_token.pos.startswith('V'):
-            curr_jamo = curr_token.jamo_str
-            next_cho = next_token.jamo_str[0]
+        curr_jamo = token.jamo_str
 
-            # 1. "밟-" 처리 (자음 앞에서 [밥])
-            if curr_token.surface == "밟":
-                if next_cho not in (O_IEUNG, O_HIEUT):
-                    curr_token.jamo_str = curr_jamo[:-1] + C_BIEUP
+        # 1. "밟-" 처리
+        if token.pos.startswith('V') and token.surface == '밟':
+            # 다음 토큰들 중 공백이 아닌 첫 형태소 탐색
+            next_cho = ''
+            for next_token in tokens[i+1:]:
+                if not next_token.pos.startswith('S'):
+                    next_cho = next_token.jamo_str[0]
+                    break
+            
+            if not next_cho or next_cho not in (O_IEUNG, O_HIEUT):
+                token.jamo_str = curr_jamo[:-1] + C_BIEUP
 
-            # 2. "넓-" 처리 (넓죽하다, 넓둥글다 등)
-            elif curr_token.surface == "넓":
-                next_joong = next_token.jamo_str[1] if len(next_token.jamo_str) >= 2 else ""
-                if next_cho in (O_JIEUT, O_SSANGJIEUT, O_DIGEUT, O_SSANGDIGEUT) and next_joong == N_U:
-                    curr_token.jamo_str = curr_jamo[:-1] + C_BIEUP
+        # 2. "넓-" 처리
+        elif '넓' in token.surface:
+            new_jamo = ''
+            j = 0
+            while j < len(curr_jamo):
+                cho = curr_jamo[j]
+                joong = curr_jamo[j+1] if j+1 < len(curr_jamo) else ''
+                jong = curr_jamo[j+2] if j+2 < len(curr_jamo) else ''
+                
+                if cho == O_NIEUN and joong == N_EO and jong == C_RIEUL_BIEUP:
+                    # 현재 위치가 단일 토큰 내부인지, 다음 토큰을 봐야 하는지 판단
+                    if j + 3 < len(curr_jamo):
+                        # 토큰 내부(Intra-token)에 다음 글자가 있음
+                        next_cho = curr_jamo[j+3]
+                        next_joong = curr_jamo[j+4] if j+4 < len(curr_jamo) else ''
+                    else:
+                        # 토큰 경계(Inter-token)에 있음: 다음 토큰 탐색
+                        next_cho = ''
+                        next_joong = ''
+                        for next_token in tokens[i+1:]:
+                            if not next_token.pos.startswith('S'):
+                                next_cho = next_token.jamo_str[0]
+                                next_joong = next_token.jamo_str[1] if len(next_token.jamo_str) >= 2 else ''
+                                break
 
+                    if next_cho in (O_JIEUT, O_SSANGJIEUT, O_DIGEUT, O_SSANGDIGEUT) and next_joong == N_U:
+                        jong = C_BIEUP
+                        
+                new_jamo += cho + joong + jong
+                j += 3
+            token.jamo_str = new_jamo
+    
     return tokens
 
 
@@ -226,7 +255,7 @@ def norm11_p(tokens: List[MorphToken]) -> List[MorphToken]:
 # and pronounced as [ㅋ, ㅌ, ㅊ].
 #
 #     놓고[노코]
-#     좋던[조:던]
+#     좋던[조:턴]
 #     쌓지[싸치]
 #     많고[만:코]
 #     않던[안턴]
@@ -236,6 +265,83 @@ def norm11_p(tokens: List[MorphToken]) -> List[MorphToken]:
 #   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a405
 def norm12_1(tokens: List[MorphToken]) -> List[MorphToken]:
     raise NotImplementedError("use `from kornorm.phonology.apply_lut import apply_phonology_lut`")
+
+
+# [제12항 1. 해설 Commentary of Norm 12 Item 1]
+#
+# 1. ‘ㅎ(ㄶ, ㅀ)’ 뒤에 평음 ‘ㄱ, ㄷ, ㅈ’으로 시작하는 말이 결합하는 경우로 주로 용언 어간 뒤에 어미가
+# 결합할 때 나타난다. 
+# This refers to cases where words starting with the plain consonants ‘ㄱ, ㄷ, ㅈ’ follow ‘ㅎ(ㄶ, ㅀ)’, 
+# which mainly occurs when an ending is combined with a predicate stem.
+# 이때에는 ‘ㅎ’과 ‘ㄱ, ㄷ, ㅈ’이 합쳐져서 격음인 [ㅋ, ㅌ, ㅊ]으로 발음된다.
+# In this case, ‘ㅎ’ is combined with ‘ㄱ, ㄷ, ㅈ’ and pronounced as the aspirated sounds [ㅋ, ㅌ, ㅊ].
+#
+# 용언 어간과 어미가 결합한 경우는 아니나 음운 환경이 같은 ‘싫증’에서는, ‘ㅎ’과 ‘ㅈ’이 [ㅊ]으로 줄지
+# 않고 [실쯩]으로 발음된다.
+# Although it is not a combination of a predicate stem and an ending, in the case of ‘싫증’, which has
+# the same phonological environment, ‘ㅎ’ and ‘ㅈ’ do not reduce to [ㅊ] but are pronounced as [실쯩].
+# 이는 ‘증(症)’이 붙는 말의 일반적인 발음 경향과 같다.
+# This follows the general pronunciation tendency of words to which the suffix ‘-증(症)’ is attached.
+# ‘염증[염쯩], 건조증[건조쯩]’에서 알 수 있듯이 ‘증(症)’이 단어의 둘째 음절 이하에 놓일 때에는 경음화가
+# 잘 일어난다.
+# As seen in ‘염증[염쯩]’ and ‘건조증[건조쯩]’, tensification (fortition) frequently occurs when
+# ‘증(症)’ is placed in the second syllable or later in a word.
+# ‘싫증’도 이러한 경향에 따라 [실쯩]으로 발음한다.
+# Following this tendency, ‘싫증’ is also pronounced as [실쯩].
+#
+#     싫증[실쯩]
+#     염증[염쯩]
+#     건조증[건조쯩]
+#
+# Ref:
+#   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a405
+def norm12_1_c(tokens: List[MorphToken]) -> List[MorphToken]:
+    """
+    제12항 1. 해설. "ㅎ(ㄶ, ㅀ)" 뒤에 한자어 "-증(症)"이 결합할 때 격음화(ㅊ)가 아닌 경음화(ㅉ)를 적용합니다.
+
+    용언 어간과 어미가 결합하는 일반적인 격음화 환경과 달리, "싫증"의 경우 'ㅎ'과 'ㅈ'이 [ㅊ]으로
+    축약되지 않고 [실쯩]으로 발음됩니다. 이를 반영하여 앞의 'ㅎ'을 탈락시키고 뒤의 'ㅈ'을 'ㅉ'으로 바꿉니다.
+
+    Args:
+        tokens (List[MorphToken]): 형태소 분석 및 자모 분해가 완료된 토큰 리스트.
+
+    Returns:
+        List[MorphToken]: "-증(症)" 조건에서 'ㅎ' 탈락 및 경음화가 적용된 리스트.
+    """
+    for i in range(len(tokens)):
+        curr_token = tokens[i]
+        if curr_token.pos.startswith('S'): 
+            continue
+
+        if '증' not in curr_token.surface:
+            continue
+
+        jamo = curr_token.jamo_str
+        new_jamo = ''
+        for j in range(0, len(jamo), 3):
+            cho, joong, jong = jamo[j:j+3]
+            
+            if j >= 3:
+                prev_jong = new_jamo[-1]
+                # 현재 음절이 '증' (ㅈ + ㅡ + ㅇ)인지 확인
+                if cho == O_JIEUT and joong == N_EU and jong == C_IEUNG:
+                    if prev_jong in (C_HIEUT, C_NIEUN_HIEUT, C_RIEUL_HIEUT):
+                        # 앞 음절의 ㅎ 탈락 처리
+                        if prev_jong == C_HIEUT:
+                            new_jamo = new_jamo[:-1] + C_NONE
+                        elif prev_jong == C_NIEUN_HIEUT:
+                            new_jamo = new_jamo[:-1] + C_NIEUN
+                        elif prev_jong == C_RIEUL_HIEUT:
+                            new_jamo = new_jamo[:-1] + C_RIEUL
+                        
+                        # 현재 음절의 ㅈ을 ㅉ으로 치환
+                        cho = O_SSANGJIEUT
+
+            new_jamo += cho + joong + jong
+        curr_token.jamo_str = new_jamo
+
+    return tokens
+
 
 # [제12항 1. 붙임 1 Addendum 1 of Norm 12 Item 1]
 #
@@ -272,7 +378,76 @@ def norm12_1_a1(tokens: List[MorphToken]) -> List[MorphToken]:
 # Ref:
 #   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a405
 def norm12_1_a2(tokens: List[MorphToken]) -> List[MorphToken]:
-    raise NotImplementedError("use `from kornorm.phonology.apply_lut import apply_phonology_lut`")
+    """
+    제12항 1. 붙임 2. 'ㄷ'으로 발음되는 'ㅅ, ㅆ, ㅈ, ㅊ, ㅌ'이 뒤 음절 첫소리 'ㅎ'과 결합할 때 [ㅌ]으로 발음합니다.
+
+    토큰 내부(예: '숱하다')와 토큰 경계(예: '옷 한 벌', '낮 한때') 환경을 나누어 처리합니다. 앞 음절의 
+    받침(ㅅ, ㅆ, ㅈ, ㅊ, ㅌ)을 탈락시키고 뒤 음절 초성의 'ㅎ'을 'ㅌ'으로 축약합니다. 단, 'ㅈ, ㅊ'은 
+    실질 형태소 여부 등 경계 조건에 따라 [ㅊ]으로 축약되는 일반 격음화(예: '꽂히다')와 구분하여 적용합니다.
+
+    Args:
+        tokens (List[MorphToken]): 형태소 분석 및 자모 분해가 완료된 토큰 리스트.
+
+    Returns:
+        List[MorphToken]: 'ㅅ, ㅆ, ㅈ, ㅊ, ㅌ' 받침 뒤에 'ㅎ'이 올 때 [ㅌ]으로 축약이 적용된 리스트.
+    """
+    for i in range(len(tokens)):
+        curr_token = tokens[i]
+        if curr_token.pos.startswith('S'): 
+            continue
+
+        # 1. 토큰 내부(Intra-token) 처리
+        jamo = curr_token.jamo_str
+        if len(jamo) >= 6:
+            new_jamo = ""
+            for j in range(0, len(jamo), 3):
+                cho, joong, jong = jamo[j:j+3]
+                if j >= 3:
+                    prev_jong = new_jamo[-1]
+                    if cho == O_HIEUT and prev_jong in (C_SIOT, C_SSANGSIOT, C_JIEUT, C_CHIEUT, C_TIEUT):
+                        # 단일 토큰 내부는 기본적으로 어간+접미사 결합으로 간주.
+                        # ㅈ, ㅊ은 단일 토큰 내부에서 ㅊ으로 축약되므로(예: 꽂히다) 건드리지 않음.
+                        if prev_jong not in (C_JIEUT, C_CHIEUT):
+                            new_jamo = new_jamo[:-1] + C_NONE  # 앞 받침 탈락
+                            cho = O_TIEUT                      # 뒤 초성 ㅌ으로 변경
+                new_jamo += cho + joong + jong
+            curr_token.jamo_str = new_jamo
+
+        # 2. 토큰 경계(Inter-token) 처리
+        if i < len(tokens) - 1:
+            curr_jamo = curr_token.jamo_str  # 갱신된 jamo_str 사용
+            curr_jong = curr_jamo[-1]
+
+            if curr_jong in (C_SIOT, C_SSANGSIOT, C_JIEUT, C_CHIEUT, C_TIEUT):
+                next_idx = i + 1
+                is_substantive = False
+                
+                # 다음 형태소 탐색 (SP 무시)
+                if tokens[next_idx].pos == "SP":
+                    is_substantive = True
+                    next_idx += 1
+                elif tokens[next_idx].pos.startswith(SUBSTANTIVE_TAGS):
+                    # 피동·사동 접미사 '-히-'가 용언(VV)으로 오분석되는 태깅 이상 보정:
+                    # 용언 어간 바로 뒤의 단음절 '히'는 실질 형태소로 보지 않음
+                    # (예: "꽂히다시피" -> 꽂/VV + 히/VV 로 오분석되어 [꼬티]가 되는 것을 방지)
+                    is_mistagged_hi = tokens[next_idx].surface == '히' and curr_token.pos.startswith('V')
+                    if not is_mistagged_hi:
+                        is_substantive = True
+                    
+                if next_idx < len(tokens):
+                    next_token = tokens[next_idx]
+                    next_cho = next_token.jamo_str[0]
+                    
+                    if next_cho == O_HIEUT:
+                        # ㅈ, ㅊ은 뒤에 실질 형태소나 공백이 올 때만 ㅌ으로 치환
+                        if curr_jong in (C_JIEUT, C_CHIEUT) and not is_substantive:
+                            continue
+                            
+                        # 앞 토큰 종성 탈락 및 뒤 토큰 초성 ㅌ 치환
+                        curr_token.jamo_str = curr_jamo[:-1] + C_NONE
+                        next_token.jamo_str = O_TIEUT + next_token.jamo_str[1:]
+                        
+    return tokens
 
 
 # [제12항 2. Norm 12 Item 2]
@@ -342,6 +517,12 @@ def norm12_4(tokens: List[MorphToken]) -> List[MorphToken]:
     """
     제12항 4. "ㅎ(ㄶ, ㅀ)" 뒤에 모음으로 시작된 어미나 접미사가 결합되는 경우에는, 'ㅎ'을 발음하지 않습니다.
 
+    토큰 내부(예: '쌓이다')와 토큰 경계(예: '많아', '싫어도') 환경을 나누어 처리합니다.
+    'ㅎ' 탈락 후 겹받침(ㄶ, ㅀ)에 남는 'ㄴ, ㄹ'은 뒤 음절 초성으로 즉시 연음합니다(예: 않은[아는]).
+    본 함수는 파이프라인 설계 상 연음(제13·14항)이 모두 지나간 *후*에 동작하며, 제13·14항의 연음
+    테이블은 ㅎ 계열 받침을 의도적으로 제외하므로, g2pK의 `link4`(`ᆭᄋ -> ᄂ`)처럼
+    탈락과 연음을 후속 규칙에 맡기지 않고 자체적으로 동시에 수행합니다.
+
     형태소 분석기의 품사 태그를 활용해 조사(J), 어미(E), 접미사(XSN, XSV, XSA)를 식별합니다.
 
     Ref:
@@ -354,28 +535,55 @@ def norm12_4(tokens: List[MorphToken]) -> List[MorphToken]:
         tokens (List[MorphToken]): 형태소 분석 및 자모 분해가 완료된 토큰 리스트.
 
     Returns:
-        List[MorphToken]: 모음 어미/접미사 앞의 ㅎ, ㄶ, ㅀ에서 ㅎ이 탈락된 리스트.
+        List[MorphToken]: 모음 어미/접미사 앞의 ㅎ, ㄶ, ㅀ에서 ㅎ이 탈락되고 남은 ㄴ, ㄹ이 연음된 리스트.
     """
-    for i in range(len(tokens) - 1):
+    for i in range(len(tokens)):
         curr_token = tokens[i]
-        next_token = tokens[i+1]
-
-        if curr_token.pos.startswith('S') or next_token.pos.startswith('S'):
+        if curr_token.pos.startswith('S'):
             continue
 
-        curr_jamo = curr_token.jamo_str
-        next_cho = next_token.jamo_str[0]
+        # 1. 토큰 내부(Intra-token) 처리
+        jamo = curr_token.jamo_str
+        if len(jamo) >= 6:
+            new_jamo = ''
+            for j in range(0, len(jamo), 3):
+                cho, joong, jong = jamo[j:j+3]
+                if j >= 3:
+                    prev_jong = new_jamo[-1]
+                    # 단일 토큰 내부는 기본적으로 어간+접미사 결합으로 간주 (예: 쌓이/VV -> [싸이])
+                    if cho == O_IEUNG:
+                        if prev_jong == C_HIEUT:
+                            new_jamo = new_jamo[:-1] + C_NONE
+                        elif prev_jong == C_NIEUN_HIEUT:
+                            new_jamo = new_jamo[:-1] + C_NONE
+                            cho = O_NIEUN
+                        elif prev_jong == C_RIEUL_HIEUT:
+                            new_jamo = new_jamo[:-1] + C_NONE
+                            cho = O_RIEUL
+                new_jamo += cho + joong + jong
+            curr_token.jamo_str = new_jamo
 
-        is_functional = next_token.pos.startswith(('J', 'E')) or next_token.pos in DERIV_SUFFIX_TAGS
+        # 2. 토큰 경계(Inter-token) 처리
+        if i < len(tokens) - 1:
+            next_token = tokens[i+1]
+            if next_token.pos.startswith('S'):
+                continue
 
-        if next_cho == O_IEUNG and is_functional:
-            curr_jong = curr_jamo[-1]
-            if curr_jong == C_HIEUT:
-                curr_token.jamo_str = curr_jamo[:-1] + C_NONE
-            elif curr_jong == C_NIEUN_HIEUT:
-                curr_token.jamo_str = curr_jamo[:-1] + C_NIEUN
-            elif curr_jong == C_RIEUL_HIEUT:
-                curr_token.jamo_str = curr_jamo[:-1] + C_RIEUL
+            curr_jamo = curr_token.jamo_str  # 갱신된 jamo_str 사용
+            next_cho = next_token.jamo_str[0]
+
+            is_functional = _is_functional(curr_token, next_token)
+
+            if next_cho == O_IEUNG and is_functional:
+                curr_jong = curr_jamo[-1]
+                if curr_jong == C_HIEUT:
+                    curr_token.jamo_str = curr_jamo[:-1] + C_NONE
+                elif curr_jong == C_NIEUN_HIEUT:
+                    curr_token.jamo_str = curr_jamo[:-1] + C_NONE
+                    next_token.jamo_str = O_NIEUN + next_token.jamo_str[1:]
+                elif curr_jong == C_RIEUL_HIEUT:
+                    curr_token.jamo_str = curr_jamo[:-1] + C_NONE
+                    next_token.jamo_str = O_RIEUL + next_token.jamo_str[1:]
 
     return tokens
 
@@ -412,6 +620,10 @@ def norm13(tokens: List[MorphToken]) -> List[MorphToken]:
     """
     제13항. 홑받침이나 쌍받침이 모음으로 시작된 조사, 어미, 접미사와 결합되는 경우에는, 제 음가대로 뒤 음절 첫소리로 옮겨 발음합니다.
 
+    토큰 내부(예: '덮이다')와 토큰 경계(예: '옷이', '깎아') 환경을 나누어 처리합니다.
+    형태소 분석기가 어간+접미사를 한 토큰으로 묶는 경우(예: 덮이/VV) 연음 경계가 토큰 내부에
+    숨기 때문에, 토큰 경계 순회만으로는 연음이 누락됩니다.
+
     ※ 주의: 본 엔진의 파이프라인 설계 상, 본 함수는 제15항(실질 형태소 앞 대표음 변환, `norm15`)이
     모두 완료된 *후*에 동작해야 합니다. 이는 zeroth 기여자 Lucas Jo의 코드에서 명시된 전제 조건
     ("15항의 실질형태소에 의한 대표음이 미리 적용되었다고 가정")을 따르는 구조입니다.
@@ -429,23 +641,42 @@ def norm13(tokens: List[MorphToken]) -> List[MorphToken]:
     Returns:
         List[MorphToken]: 홑/쌍받침이 뒤 모음의 초성으로 연음된 리스트.
     """
-    for i in range(len(tokens) - 1):
+    for i in range(len(tokens)):
         curr_token = tokens[i]
-        next_token = tokens[i+1]
-
-        if curr_token.pos.startswith('S') or next_token.pos.startswith('S'):
+        if curr_token.pos.startswith('S'):
             continue
 
-        curr_jamo = curr_token.jamo_str
-        next_cho = next_token.jamo_str[0]
+        # 1. 토큰 내부(Intra-token) 처리
+        jamo = curr_token.jamo_str
+        if len(jamo) >= 6:
+            new_jamo = ''
+            for j in range(0, len(jamo), 3):
+                cho, joong, jong = jamo[j:j+3]
+                if j >= 3:
+                    prev_jong = new_jamo[-1]
+                    # 단일 토큰 내부는 기본적으로 어간+접미사 결합으로 간주 (예: 덮이/VV -> [더피])
+                    if cho == O_IEUNG and prev_jong in _JONG_TO_CHO:
+                        new_jamo = new_jamo[:-1] + C_NONE
+                        cho = _JONG_TO_CHO[prev_jong]
+                new_jamo += cho + joong + jong
+            curr_token.jamo_str = new_jamo
 
-        is_functional = next_token.pos.startswith(('J', 'E')) or next_token.pos in DERIV_SUFFIX_TAGS
+        # 2. 토큰 경계(Inter-token) 처리
+        if i < len(tokens) - 1:
+            next_token = tokens[i+1]
+            if next_token.pos.startswith('S'):
+                continue
 
-        if next_cho == O_IEUNG and is_functional:
-            curr_jong = curr_jamo[-1]
-            if curr_jong in _JONG_TO_CHO:
-                curr_token.jamo_str = curr_jamo[:-1] + C_NONE
-                next_token.jamo_str = _JONG_TO_CHO[curr_jong] + next_token.jamo_str[1:]
+            curr_jamo = curr_token.jamo_str  # 갱신된 jamo_str 사용
+            next_cho = next_token.jamo_str[0]
+
+            is_functional = _is_functional(curr_token, next_token)
+
+            if next_cho == O_IEUNG and is_functional:
+                curr_jong = curr_jamo[-1]
+                if curr_jong in _JONG_TO_CHO:
+                    curr_token.jamo_str = curr_jamo[:-1] + C_NONE
+                    next_token.jamo_str = _JONG_TO_CHO[curr_jong] + next_token.jamo_str[1:]
 
     return tokens
 
@@ -487,6 +718,10 @@ def norm14(tokens: List[MorphToken]) -> List[MorphToken]:
 
     'ㅅ'은 된소리 'ㅆ'으로 발음합니다.
 
+    토큰 내부(예: '거침없이')와 토큰 경계(예: '앉아', '값을') 환경을 나누어 처리합니다.
+    형태소 분석기가 파생어 전체를 한 토큰으로 묶는 경우(예: 거침없이/MAG) 겹받침 연음 경계가
+    토큰 내부에 숨기 때문에, 토큰 경계 순회만으로는 연음이 누락됩니다.
+
     Ref:
         g2pk.regular.link2()
         — https://github.com/Kyubyong/g2pK/blob/master/g2pk/regular.py#L35-L52
@@ -499,24 +734,44 @@ def norm14(tokens: List[MorphToken]) -> List[MorphToken]:
     Returns:
         List[MorphToken]: 겹받침의 뒤 자음이 모음의 초성으로 연음된 리스트.
     """
-    for i in range(len(tokens) - 1):
+    for i in range(len(tokens)):
         curr_token = tokens[i]
-        next_token = tokens[i+1]
-
-        if curr_token.pos.startswith('S') or next_token.pos.startswith('S'):
+        if curr_token.pos.startswith('S'):
             continue
 
-        curr_jamo = curr_token.jamo_str
-        next_cho = next_token.jamo_str[0]
+        # 1. 토큰 내부(Intra-token) 처리
+        jamo = curr_token.jamo_str
+        if len(jamo) >= 6:
+            new_jamo = ''
+            for j in range(0, len(jamo), 3):
+                cho, joong, jong = jamo[j:j+3]
+                if j >= 3:
+                    prev_jong = new_jamo[-1]
+                    # 단일 토큰 내부는 기본적으로 어간+접미사 결합으로 간주 (예: 거침없이/MAG -> [거치멉씨])
+                    if cho == O_IEUNG and prev_jong in _GYUB_TO_SPLIT:
+                        remain_jong, move_cho = _GYUB_TO_SPLIT[prev_jong]
+                        new_jamo = new_jamo[:-1] + remain_jong
+                        cho = move_cho
+                new_jamo += cho + joong + jong
+            curr_token.jamo_str = new_jamo
 
-        is_functional = next_token.pos.startswith(('J', 'E')) or next_token.pos in DERIV_SUFFIX_TAGS
+        # 2. 토큰 경계(Inter-token) 처리
+        if i < len(tokens) - 1:
+            next_token = tokens[i+1]
+            if next_token.pos.startswith('S'):
+                continue
 
-        if next_cho == O_IEUNG and is_functional:
-            curr_jong = curr_jamo[-1]
-            if curr_jong in _GYUB_TO_SPLIT:
-                remain_jong, move_cho = _GYUB_TO_SPLIT[curr_jong]
-                curr_token.jamo_str = curr_jamo[:-1] + remain_jong
-                next_token.jamo_str = move_cho + next_token.jamo_str[1:]
+            curr_jamo = curr_token.jamo_str  # 갱신된 jamo_str 사용
+            next_cho = next_token.jamo_str[0]
+
+            is_functional = _is_functional(curr_token, next_token)
+
+            if next_cho == O_IEUNG and is_functional:
+                curr_jong = curr_jamo[-1]
+                if curr_jong in _GYUB_TO_SPLIT:
+                    remain_jong, move_cho = _GYUB_TO_SPLIT[curr_jong]
+                    curr_token.jamo_str = curr_jamo[:-1] + remain_jong
+                    next_token.jamo_str = move_cho + next_token.jamo_str[1:]
 
     return tokens
 
@@ -542,22 +797,32 @@ _REP_ONSET_REAL_MORPH = {
     # ㄱ 계열 (ㄱ, ㄲ, ㅋ, ㄳ, ㄺ) -> ㄱ
     C_GIYEOK: O_GIYEOK, C_SSANGGIYEOK: O_GIYEOK, C_KIEUK: O_GIYEOK,
     C_GIYEOK_SIOT: O_GIYEOK, C_RIEUL_GIYEOK: O_GIYEOK,
-    # ㄴ 계열 (ㄴ, ㄵ, ㄶ) -> ㄴ
-    C_NIEUN: O_NIEUN, C_NIEUN_JIEUT: O_NIEUN, C_NIEUN_HIEUT: O_NIEUN,
+    # ㄴ 계열 겹받침 (ㄵ, ㄶ) -> ㄴ
+    C_NIEUN_JIEUT: O_NIEUN, C_NIEUN_HIEUT: O_NIEUN,
     # ㄷ 계열 (ㄷ, ㅅ, ㅆ, ㅈ, ㅊ, ㅌ, ㅎ) -> ㄷ
     C_DIGEUT: O_DIGEUT, C_SIOT: O_DIGEUT, C_SSANGSIOT: O_DIGEUT,
     C_JIEUT: O_DIGEUT, C_CHIEUT: O_DIGEUT, C_TIEUT: O_DIGEUT, C_HIEUT: O_DIGEUT,
-    # ㄹ 계열 (ㄹ, ㄼ, ㄽ, ㄾ, ㅀ) -> ㄹ
-    C_RIEUL: O_RIEUL, C_RIEUL_BIEUP: O_RIEUL, C_RIEUL_SIOT: O_RIEUL,
+    # ㄹ 계열 겹받침 (ㄼ, ㄽ, ㄾ, ㅀ) -> ㄹ
+    C_RIEUL_BIEUP: O_RIEUL, C_RIEUL_SIOT: O_RIEUL,
     C_RIEUL_TIEUT: O_RIEUL, C_RIEUL_HIEUT: O_RIEUL,
-    # ㅁ 계열 (ㅁ, ㄻ) -> ㅁ
-    C_MIEUM: O_MIEUM, C_RIEUL_MIEUM: O_MIEUM,
+    # ㅁ 계열 겹받침 (ㄻ) -> ㅁ
+    C_RIEUL_MIEUM: O_MIEUM,
+    # ※ 공명음 홑받침(ㄴ, ㄹ, ㅁ, ㅇ)은 테이블에서 제외한다. 해설에 따르면 제15항의 절음은
+    #   받침이 대표음 [ㄱ, ㄷ, ㅂ] 중 하나로 바뀐 후 이동하는 현상이므로 공명음 홑받침은 대상이 아니다.
+    #   포함 시 "달리던 아이", "그는 아무"가 [달리더 나이], [그느 나무]로 과발동한다.
+    #   겹받침은 붙임("그중 하나만을 옮겨 발음", 예: 닭 앞에[다가페])에 따라 유지한다.
     # ㅂ 계열 (ㅂ, ㅍ, ㅄ, ㄿ) -> ㅂ
     C_BIEUP: O_BIEUP, C_PIEUP: O_BIEUP, C_BIEUP_SIOT: O_BIEUP, C_RIEUL_PIEUP: O_BIEUP,
-    # ㅇ 계열
-    C_IEUNG: O_IEUNG
+    # ※ 받침 ㅇ(C_IEUNG)은 초성으로 이동할 수 없는 연구개 비음이므로 테이블에서 제외한다.
+    #   포함 시 "식당 음식[식땅 음식]"의 ㅇ 종성이 삭제되는 오류가 발생한다 (예: [식따 음식]).
 }
-_TARGET_VOWELS_REAL_MORPH = (N_A, N_EO, N_O, N_U, N_WI)  # ㅏ, ㅓ, ㅗ, ㅜ, ㅟ
+# 조항의 "ㅏ, ㅓ, ㅗ, ㅜ, ㅟ"는 대표 표기이며, 해설에 따르면 단모음 ㅣ와 반모음 ㅣ[j] 계열
+# (ㅑ, ㅒ, ㅕ, ㅖ, ㅛ, ㅠ)을 제외한 나머지 모음(ㅐ, ㅔ, ㅚ 등)을 모두 포함하는 것으로 본다.
+# ㅣ·j 계열이 제외된 이유는 그 환경에서는 제29항의 ㄴ첨가가 대신 발동하기 때문이다 (예: 앞일[암닐], 꽃잎[꼰닙]).
+_TARGET_VOWELS_REAL_MORPH = (
+    N_A, N_AE, N_EO, N_E, N_O, N_WA, N_WAE, N_OE,
+    N_U, N_WEO, N_WE, N_WI, N_EU, N_UI,
+)  # ㅏ, ㅐ, ㅓ, ㅔ, ㅗ, ㅘ, ㅙ, ㅚ, ㅜ, ㅝ, ㅞ, ㅟ, ㅡ, ㅢ
 def norm15(tokens: List[MorphToken]) -> List[MorphToken]:
     """
     제15항. 받침 뒤에 모음 ‘ㅏ, ㅓ, ㅗ, ㅜ, ㅟ’ 들로 시작되는 실질 형태소가 연결되는 경우에는, 대표음으로 바꾸어서 뒤 음절 첫소리로 옮겨 발음합니다.
@@ -568,6 +833,9 @@ def norm15(tokens: List[MorphToken]) -> List[MorphToken]:
 
     ※ 주의: 본 엔진의 파이프라인 설계 상, 이 함수는 제13항(형식 형태소 연음, `norm13`)을 통과하기 *전*에
     실행되어야 합니다. 그렇지 않을 경우 "맛없다"가 [마덥따]가 아닌 [마섭따]로 오독됩니다.
+
+    ※ 참고: 붙임의 "값어치[가버치]"는 '-어치'가 현행 사전상 접미사임에도 절음되는 예외입니다(해설: 역사적
+    실질 형태소). 본 엔진은 pecab이 '어치'를 NNG(실질)로 태깅하는 데 의존하므로, 사전 패치 시 주의가 필요합니다.
 
     Ref:
         g2pk.regular.link3()
@@ -589,7 +857,9 @@ def norm15(tokens: List[MorphToken]) -> List[MorphToken]:
 
         # 뒤에 이어지는 다음 실질 형태소를 찾기 위해 공백(SP) 토큰은 건너뜀
         next_idx = i + 1
+        has_space = False
         if tokens[next_idx].pos == "SP":
+            has_space = True
             next_idx += 1
 
         if next_idx >= len(tokens):
@@ -609,9 +879,15 @@ def norm15(tokens: List[MorphToken]) -> List[MorphToken]:
         next_cho = next_jamo[0]
         next_joong = next_jamo[1] if len(next_jamo) >= 2 else ""
 
-        # 모음(ㅏ, ㅓ, ㅗ, ㅜ, ㅟ)으로 시작하는 실질 형태소인지 확인
-        if next_cho == O_IEUNG and next_joong in _TARGET_VOWELS_REAL_MORPH:
-            is_functional = next_token.pos.startswith(('J', 'E')) or next_token.pos in DERIV_SUFFIX_TAGS
+        # 모음(비 ㅣ·j 계열)으로 시작하는 실질 형태소인지 확인.
+        # '있-'은 ㅣ로 시작하지만 ㄴ첨가 없이 절음되는 어휘적 예외 (예: 맛있다[마딛따] 원칙, 값있는[가빈는]).
+        # 여기서 원칙 발음을 만든 뒤, 허용 발음(맛있다[마싣따])은 후속 norm15_p가 덮어쓴다.
+        # 단, 이 특례는 붙여 쓰는 어휘화된 결합에 한정한다. 공백을 사이에 둔 통사적 구성
+        # (예: "결단력 있게")까지 절음하면 [결딴녀 긷께]로 과발동한다.
+        is_lexical_it = next_token.surface.startswith("있") and not has_space
+        is_target_vowel = next_joong in _TARGET_VOWELS_REAL_MORPH or is_lexical_it
+        if next_cho == O_IEUNG and is_target_vowel:
+            is_functional = _is_functional(curr_token, next_token)
 
             if not is_functional:
                 if curr_jong in _REP_ONSET_REAL_MORPH:
@@ -756,7 +1032,9 @@ def norm16(tokens: List[MorphToken]) -> List[MorphToken]:
             curr_jamo = curr_token.jamo_str
             next_cho = next_token.jamo_str[0]
 
-            if next_cho == O_IEUNG and next_token.pos.startswith('J'):
+            # 조사(J*)만이 아니라 서술격 조사(디귿이다[디그시다])와 '을/ETN' 오태깅까지 포괄하도록
+            # 공용 형식 형태소 판별(_is_functional)을 사용한다.
+            if next_cho == O_IEUNG and _is_functional(curr_token, next_token):
                 curr_jong = curr_jamo[-1]
                 if curr_jong in _JAMO_NAME_EXCEPTIONS:
                     curr_token.jamo_str = curr_jamo[:-1] + _JAMO_NAME_EXCEPTIONS[curr_jong]

@@ -4,7 +4,7 @@
 #   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a388
 
 from typing import List, Tuple
-from kornorm.phonology.engine import MorphToken
+from kornorm.phonology.common import MorphToken
 
 from kornorm.utils.jamo import (
     O_NIEUN, O_RIEUL, O_SIOT, O_SSANGSIOT, O_IEUNG,
@@ -165,7 +165,7 @@ def norm5_p2(
 # 자음을 첫소리로 가지고 있는 음절의 ‘ㅢ’는 [ㅣ]로 발음한다.
 # ‘ㅢ’ in syllables that have a consonant as the initial sound is pronounced as [ㅣ].
 #
-#     닐리리
+#     늴리리
 #     닁큼
 #     무늬
 #     띄어쓰기
@@ -196,6 +196,11 @@ def norm5_p3(tokens: List[MorphToken]) -> List[MorphToken]:
     """
     for token in tokens:
         if token.pos.startswith('S'): continue # 공백(SP), 영문(SL), 숫자(SN), 기호(SY) 등 자모 치환에서 제외
+
+        # 본 조항은 표기 기준이므로, 사전 발음이 선적용된 토큰의 자음+ㅢ는 연음 유래의
+        # 원칙형(협의[혀븨])으로 보고 재변형하지 않는다.
+        if getattr(token, "stdict_applied", False):
+            continue
 
         jamo = token.jamo_str
         new_jamo = ''
@@ -247,6 +252,7 @@ def norm5_p4_1(tokens: List[MorphToken]) -> List[MorphToken]:
     """
     for token_idx, token in enumerate(tokens):
         if token.pos.startswith('S'): continue # 공백(SP), 영문(SL), 숫자(SN), 기호(SY) 등 자모 치환에서 제외
+        if token.pos.startswith('J'): continue # 조사 또한 5.4.2항에서 처리해야 하므로 제외
 
         # 단어(어절)의 첫 번째 형태소이면서, 형태소 내의 첫 번째 글자이면 첫음절임.
         # 이를 정확히 하려면 앞 토큰이 공백(SP)인지 등을 확인해야 함.

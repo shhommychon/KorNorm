@@ -4,8 +4,8 @@
 #   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a393
 
 from typing import List
-from kornorm.phonology.engine import MorphToken
-from kornorm.phonology.common import FORTIS_MAPPING, DERIV_SUFFIX_TAGS, SUBSTANTIVE_TAGS
+from kornorm.phonology.common import MorphToken
+from kornorm.phonology.common import FORTIS_MAPPING, DERIV_SUFFIX_TAGS, SUBSTANTIVE_TAGS, _is_cohesive_boundary
 
 from kornorm.utils.jamo import (
     O_NIEUN, O_RIEUL, O_MIEUM, O_IEUNG,
@@ -140,7 +140,11 @@ def norm29(tokens: List[MorphToken]) -> List[MorphToken]:
             continue
 
         # 1. 단일 토큰 내부의 합성어 경계 처리 ("솜-이불"이 한 토큰으로 들어온 경우)
+        #    다만 2 조항: 사전 발음이 표기와 동일한 단어(등용문[등용문])는 "표기대로 발음"이라는
+        #    적극적 정보이므로, 합성어 경계가 있어도 ㄴ(ㄹ)을 첨가하지 않는다.
         internal_boundaries = _get_internal_boundaries(getattr(curr_token, "compound_structure", ''))
+        if getattr(curr_token, "pronunciation", '') == curr_token.surface:
+            internal_boundaries = []
         if internal_boundaries:
             jamo_list = list(curr_token.jamo_str)
             for bnd in internal_boundaries:
@@ -150,6 +154,10 @@ def norm29(tokens: List[MorphToken]) -> List[MorphToken]:
                 prev_jong = jamo_list[j - 1]
                 next_cho = jamo_list[j]
                 next_joong = jamo_list[j + 1] if j + 1 < len(jamo_list) else ""
+
+                # 어말의 단음절 '이'(파생 접미사 '-이') 경계는 ㄴ첨가 대상이 아니다 (예: 미닫이[미다지])
+                if j == len(jamo_list) - 3 and next_cho == O_IEUNG and next_joong == N_I and jamo_list[j + 2] == C_NONE:
+                    continue
 
                 # 앞 단어의 끝이 자음(받침 있음)인지 확인
                 if prev_jong != C_NONE:
@@ -161,20 +169,38 @@ def norm29(tokens: List[MorphToken]) -> List[MorphToken]:
 
             curr_token.jamo_str = "".join(jamo_list)
 
-        # 2. 토큰 간 경계 처리 (띄어쓰기 포함, 구 구성 및 신조어 파생어 방어)
+        # 2. 토큰 간 경계 처리 (신조어 등 사전에 없는 합성/파생어가 토큰으로 쪼개진 경우 방어)
+        #    본항의 적용 범위는 붙여 쓰는 합성어·파생어이므로 원칙적으로 무공백 경계로 한정하되,
+        #    붙임 2(두 단어를 이어서 한 마디로: 한 일[한닐], 할 일[할릴])는 어절 결속도가 인정되는
+        #    품사 쌍의 경계에서만 공백을 넘어 적용한다. 무분별한 공백 통과는 느슨한 어절 경계에서
+        #    과발동한다 (예: "그냥 일하기가" -> [그냥 닐하기가] — 부사+체언이라 결속도 판정에서 배제).
         if i < len(tokens) - 1:
             next_idx = i + 1
+            crosses_space = False
             if tokens[next_idx].pos == 'SP':
-                next_idx += 1
-            if next_idx >= len(tokens):
-                continue
+                if i + 2 >= len(tokens) or not _is_cohesive_boundary(curr_token, tokens[i + 2]):
+                    continue
+                next_idx = i + 2
+                crosses_space = True
 
             next_token = tokens[next_idx]
             if next_token.pos.startswith('S'):
                 continue
 
-            is_curr_valid = curr_token.pos.startswith(SUBSTANTIVE_TAGS) or curr_token.pos == "XPN"
-            is_next_valid = next_token.pos.startswith(SUBSTANTIVE_TAGS) or next_token.pos in DERIV_SUFFIX_TAGS
+            # '있-'은 '이'로 시작하는 실질 형태소지만 ㄴ첨가 없이 절음·연음되는 어휘적 예외
+            # (제15항 다만 맛있다[마싣따], 붙임 값있는[가빈는] — 해설 참조)
+            if next_token.surface.startswith("있"):
+                continue
+
+            # 단음절 '이'는 대개 파생 접미사 '-이'의 오분석이며(굳이[구지], 벼훑이[벼훌치] — 제17항 예시),
+            # 치아 '이'의 합성어는 표기부터 '니'(앞니, 덧니)이므로 ㄴ첨가 대상 실질 형태소로 보지 않는다.
+            if next_token.surface == '이':
+                continue
+
+            # 결속도 판정을 통과한 공백 경계는 품사 쌍 검증을 이미 마친 것이므로 그대로 인정한다
+            # (예: "먹은 엿"의 앞 토큰은 어미(ETM)라 실질 형태소 검사로는 걸러진다).
+            is_curr_valid = crosses_space or curr_token.pos.startswith(SUBSTANTIVE_TAGS) or curr_token.pos == "XPN"
+            is_next_valid = crosses_space or next_token.pos.startswith(SUBSTANTIVE_TAGS) or next_token.pos in DERIV_SUFFIX_TAGS
 
             if is_curr_valid and is_next_valid:
                 curr_jong = curr_token.jamo_str[-1]

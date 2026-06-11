@@ -4,7 +4,7 @@
 #   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a392
 
 from typing import List
-from kornorm.phonology.engine import MorphToken
+from kornorm.phonology.common import MorphToken
 from kornorm.phonology.common import FORTIS_MAPPING
 
 from kornorm.utils.jamo import (
@@ -32,9 +32,9 @@ from kornorm.utils.jamo import (
 #     있던[읻떤]
 #     꽂고[꼳꼬]
 #     꽃다발[꼳따발]
-#     낮설다[낟썰다]
+#     낯설다[낟썰다]
 #     밭갈이[받까리]
-#     솥전[섣쩐]
+#     솥전[솓쩐]
 #     곱돌[곱똘]
 #     덮개[덥깨]
 #     옆집[엽찝]
@@ -357,7 +357,21 @@ def norm27(
         if curr_token.pos.startswith('S'):
             continue
 
-        if curr_token.pos.startswith('E') and curr_token.jamo_str[-1] == C_RIEUL:
+        # 관형사형 전성어미(ETM)로 한정한다. 'E' 전체로 검사하면 ㄹ로 끝나는 연결어미('-거늘' 등)나
+        # 명사형 어미 오태깅('을/ETN' 등)까지 경음화가 오발동한다 (예: "헛웃음을 지으며" -> [찌으며]).
+        # 형태소 분석기는 축약형("할" = 하/VV + ㄹ/ETM)을 "VV+ETM" 복합 태그 단일 토큰으로 병합하므로,
+        # 태그의 마지막 성분이 ETM인지 검사한다.
+        if curr_token.pos.split('+')[-1] == "ETM" and curr_token.jamo_str[-1] == C_RIEUL:
+            # 오태깅 가드: 체언 토큰에 공백 없이 바로 붙은 VV/VA 계열 관형사형은 합성명사가
+            # 조각난 것(예: "칼날" -> 칼/NNG + 날/VV+ETM)이므로 경음화하지 않는다. 정상 표기에서
+            # 용언 관형사형은 공백 뒤(만날 사람)나 체언+하다 파생(도착한/XSV+ETM)으로만 나타난다.
+            if (
+                curr_token.pos.startswith(("VV", "VA"))
+                and i >= 1
+                and tokens[i - 1].pos.startswith('N')
+            ):
+                continue
+
             next_idx = i + 1
             has_space = False
 
@@ -399,9 +413,19 @@ def norm27(
 #
 # Ref:
 #   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a420
+
+# 'ㄹ' 종성 바로 뒤에 이어지는, 규범 붙임에 열거된 '-(으)ㄹ' 계열 어미의 잔여 표기.
+# '-ㄹ지'와 '-ㄹ게'는 ㄹ 말음 어간 + 평어미 조합(만들지[만들지], 달게[달게])과 표면형이 충돌하여
+# 형태소 태그만으로는 구분할 수 없으므로 보수적으로 제외한다.
+_RIEUL_ENDING_REMAINDERS = ('걸', "밖에", "세라", "수록", "지라도", "지언정", "진대")
 def norm27_a(tokens: List[MorphToken]) -> List[MorphToken]:
     """
     제27항 붙임. ‘-(으)ㄹ’로 시작되는 어미(-ㄹ걸, -ㄹ수록 등)의 내부에서 발생하는 경음화를 처리합니다.
+
+    형태소 분석기는 이 계열의 어미를 어간과 병합한 복합 태그 단일 토큰("할수록" = VV+EC)으로 내놓으므로,
+    용언+어미 복합 토큰 내부를 스캔하여 'ㄹ' 종성 뒤 잔여 표기가 열거된 어미와 일치할 때만 경음화합니다.
+    잔여 표기 전체 일치를 요구하므로 ㄹ 말음 어간의 평어미 활용(만들지)은 건드리지 않으면서도,
+    ㄹ 말음 어간 병합(만들수록[만들쑤록])과 '-을' 계열(먹을지라도[머글찌라도])은 자연스럽게 처리됩니다.
 
     Ref:
         g2pk.special.modifying_rieul()
@@ -413,12 +437,13 @@ def norm27_a(tokens: List[MorphToken]) -> List[MorphToken]:
         tokens (List[MorphToken]): 형태소 분석 및 자모 분해가 완료된 토큰 리스트.
 
     Returns:
-        List[MorphToken]: 단일 어미 토큰 내의 'ㄹ' 뒤 자음이 된소리로 치환된 토큰 리스트.
+        List[MorphToken]: 'ㄹ'로 시작되는 어미 내부의 자음이 된소리로 치환된 토큰 리스트.
     """
     for curr_token in tokens:
         if curr_token.pos.startswith('S'):
             continue
 
+        # 1. 순수 어미(E) 토큰: 어미 표기 내부의 'ㄹ' 뒤 자음을 그대로 경음화
         if curr_token.pos.startswith('E'):
             jamo = curr_token.jamo_str
             new_jamo = ""
@@ -429,6 +454,27 @@ def norm27_a(tokens: List[MorphToken]) -> List[MorphToken]:
                     cho = FORTIS_MAPPING[cho]
                 new_jamo += cho + joong + jong
             curr_token.jamo_str = new_jamo
+            continue
+
+        # 2. 용언 어간과 어미가 병합된 복합 토큰(VV+EC, VV+EF 등): 'ㄹ' 종성 뒤 잔여 표기가
+        #    열거된 '-(으)ㄹ' 계열 어미와 온전히 일치할 때만 경음화
+        if '+E' in curr_token.pos and curr_token.pos.split('+')[0].startswith(('V', "XS")):
+            surface = curr_token.surface
+            jamo = curr_token.jamo_str
+            if len(jamo) != 3 * len(surface):
+                continue
+
+            for k in range(len(surface) - 1):
+                if jamo[3 * k + 2] != C_RIEUL:
+                    continue
+                if surface[k + 1:] not in _RIEUL_ENDING_REMAINDERS:
+                    continue
+                next_cho = jamo[3 * (k + 1)]
+                if next_cho in FORTIS_MAPPING:
+                    curr_token.jamo_str = (
+                        jamo[:3 * (k + 1)] + FORTIS_MAPPING[next_cho] + jamo[3 * (k + 1) + 1:]
+                    )
+                break
 
     return tokens
 
@@ -450,7 +496,7 @@ def norm27_a(tokens: List[MorphToken]) -> List[MorphToken]:
 #     발-바닥[발빠닥]
 #     굴-속[굴쏙]
 #     술-잔[술짠]
-#     바람-결[바람껄]
+#     바람-결[바람껼]
 #     그믐-달[그믐딸]
 #     아침-밥[아침빱]
 #     잠-자리[잠짜리]
