@@ -15,6 +15,7 @@ from kornorm.phonology.chapter2 import (
 )
 from kornorm.phonology.chapter4 import (
     norm10_p, norm11_p, norm12_1_c, norm12_1_a2, norm12_4, norm13, norm14, norm15, norm15_p, norm16,
+    _NORM15_PROVISO_LEMMAS,
 )
 from kornorm.phonology.chapter5 import (
     norm17, norm17_a, norm18_a, norm20_p,
@@ -64,7 +65,8 @@ def apply_stdict_pronunciation(tokens: List[MorphToken]) -> List[MorphToken]:
 
         # 사전 표제어와 표면형이 온전히 일치하는 것은 사실상 체언·수식언·어근 계열이므로,
         # 어미·조사 등이 동형의 표제어와 우연히 충돌하는 것을 막는다 (예: 연결어미 '다가' vs 多價[다까]).
-        if not token.pos.startswith(('N', 'M', "XR")):
+        # 용언 어간(V*)은 토큰화 단계의 '-다' 표제어 폴백으로 얻은 발음만 지니므로 함께 허용한다.
+        if not token.pos.startswith(('N', 'M', "XR", "VV", "VA", "VX")):
             continue
 
         pron = token.pronunciation
@@ -176,6 +178,28 @@ class PhonologicProcessor:
                         pron_str = dict_info.get("pronunciation", '')
                 except KeyError:
                     pass
+
+                if pos.startswith(("VV", "VA", "VX")):
+                    # 용언 어간과 동형인 명사류 표제어의 발음이 어간에 오염되는 것을 차단한다
+                    # (예: 감돌다의 어간 감돌/VV vs 명사 감돌[감똘]). 용언 발음은 아래 폴백만 신뢰.
+                    pron_str = ''
+                    # 용언은 표제어가 '-다'형이라 어간 표면형으로는 구조적으로 미조회된다.
+                    # 어간+'다'로 폴백 조회하고, 발음·결합 구조에서 '다' 음절을 걷어내 어간분만 취한다
+                    # (예: 설익/VV -> 설익다[설릭따] -> 어간 발음 "설릭").
+                    lemma = term + '다'
+                    if lemma not in _NORM15_PROVISO_LEMMAS:
+                        try:
+                            lemma_info = self.stdict_trie[lemma]
+                            if isinstance(lemma_info, dict):
+                                lemma_pron = lemma_info.get("pronunciation", '')
+                                if len(lemma_pron) == len(term) + 1:
+                                    is_h = (lemma_info.get("is_hanja") == '1')
+                                    pron_str = lemma_pron[:-1]
+                                    comp_str = lemma_info.get("compound_structure", '')
+                                    if comp_str.endswith('다'):
+                                        comp_str = comp_str[:-1]
+                        except KeyError:
+                            pass
 
             token = MorphToken(
                 surface=term,
