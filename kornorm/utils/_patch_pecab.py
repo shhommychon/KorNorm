@@ -1011,6 +1011,13 @@ def patch_pecab_dictionary_if_needed():
 
     현재 리비전으로 이미 패치된 경우(마커 파일의 리비전 일치) 즉시 통과하여
     로딩 속도에 영향을 주지 않습니다. 패치 목록이 갱신되면(리비전 상승) 재패치합니다.
+
+    표층어 병합('|')과 DAT 재빌드·Arrow IPC 직렬화 구조는 pecab이 자체 사전을
+    빌드하는 방식을 그대로 따릅니다.
+
+    Ref:
+        pecab _resources/_convert_to_arrow.py
+        — https://github.com/hyunwoongko/pecab/blob/main/pecab/_resources/_convert_to_arrow.py
     """
     pecab_resource_dir = os.path.join(os.path.dirname(pecab.__file__), "_resources")
     marker_path = os.path.join(pecab_resource_dir, MARKER_FILE)
