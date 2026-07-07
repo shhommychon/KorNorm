@@ -7,4 +7,5 @@ from kornorm.alphanumeric.entities import (
     read_currencies, read_unit_exceptions, read_units,
     read_alphanum_combos, read_abbreviations
 )
+from kornorm.alphanumeric.english import read_english_words
 from kornorm.alphanumeric.preset import dealers_choice
