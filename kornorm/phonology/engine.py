@@ -21,8 +21,9 @@ from kornorm.phonology.chapter5 import (
     norm17, norm17_a, norm18_a, norm20_p,
 )
 from kornorm.phonology.chapter6 import (
-    norm24, norm25, norm26, norm27, norm27_a,
+    norm24, norm25, norm26, norm26_c, norm27, norm27_a,
 )
+from kornorm.phonology.homographs import resolve_homograph
 from kornorm.phonology.chapter7 import (
     norm29, norm30,
 )
@@ -71,6 +72,12 @@ def apply_stdict_pronunciation(tokens: List[MorphToken]) -> List[MorphToken]:
         # 용언 어간(V*)은 토큰화 단계의 '-다' 표제어 폴백으로 얻은 발음만 지니므로 함께 허용한다.
         if not token.pos.startswith(('N', 'M', "XR", "VV", "VA", "VX")):
             continue
+
+        # 문맥 의존 동형어는 공기 단서 판별 결과로 사전 발음을 덮어쓴다
+        # (잠자리[잠짜리](침구) vs 잠자리[잠자리](곤충) — 무표 독법이면 치환이 자연 스킵된다).
+        resolved = resolve_homograph(token.surface, tokens)
+        if resolved is not None:
+            token.pronunciation = resolved
 
         pron = token.pronunciation
         if not pron or pron == token.surface or len(pron) != len(token.surface):
@@ -295,6 +302,7 @@ class PhonologicProcessor:
         # 1. 한자어 처리
         tokens = norm20_p(tokens)
         tokens = norm26(tokens)
+        tokens = norm26_c(tokens)
 
         # 2. 복합어/파생어 처리
         tokens = norm30(tokens, keep_saisiot=False) # 사이시옷의 발음(ㄷ)을 탈락시키고 뒤 자음의 변동만 취합
