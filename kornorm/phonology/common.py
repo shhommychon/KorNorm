@@ -139,3 +139,20 @@ def _is_tight_cohesive_boundary(prev_token: MorphToken, next_token: MorphToken) 
     prev_pos = prev_token.pos.split('+')[-1]
     return prev_pos.startswith("NN") and next_token.pos.startswith(("VV", "VA", "VX"))
 
+
+def _ends_with_functional(token: MorphToken) -> bool:
+    """
+    어절의 마지막 토큰이 조사·어미(형식 형태소)로 끝나는지 판별합니다.
+
+    조사·어미로 끝난 어절 뒤는 "두 단어를 이어서 한 마디로 발음하는 경우"로 보지 않는다는
+    어절 결속도 공통 원칙의 판별 헬퍼입니다 (복합 태그는 마지막 태그 기준.
+    예: 할수록/VV+EC -> EC -> True, 밭/NNG -> False).
+
+    Args:
+        token (MorphToken): 공백 직전 토큰 (앞 어절의 마지막 형태소).
+
+    Returns:
+        bool: 조사(J*)·어미(E*)로 끝나면 True.
+    """
+    return token.pos.split('+')[-1].startswith(('J', 'E'))
+

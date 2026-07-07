@@ -5,7 +5,7 @@
 
 from typing import List
 from kornorm.phonology.common import MorphToken
-from kornorm.phonology.common import DERIV_SUFFIX_TAGS, SUBSTANTIVE_TAGS, _is_functional
+from kornorm.phonology.common import DERIV_SUFFIX_TAGS, SUBSTANTIVE_TAGS, _is_functional, _ends_with_functional
 
 from kornorm.utils.jamo import (
     O_GIYEOK, O_SSANGGIYEOK, O_NIEUN, O_DIGEUT, O_SSANGDIGEUT,
@@ -867,6 +867,12 @@ def norm15(tokens: List[MorphToken]) -> List[MorphToken]:
 
         next_token = tokens[next_idx]
         if next_token.pos.startswith('S'):
+            continue
+
+        # 조사·어미로 끝난 어절 뒤에서는 공백을 넘는 절음을 하지 않는다 — 한 마디로 이어
+        # 발음하는 경계가 아니다 (어절 결속도 공통 원칙). 예: "할수록 어려울"을
+        # [할쑤로 거려울]로 이어 붙이지 않고 [할쑤록 어려울]로 둔다.
+        if has_space and _ends_with_functional(curr_token):
             continue
 
         curr_jamo = curr_token.jamo_str

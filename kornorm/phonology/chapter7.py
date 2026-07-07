@@ -7,6 +7,8 @@ from typing import List
 from kornorm.phonology.common import MorphToken
 from kornorm.phonology.common import FORTIS_MAPPING, DERIV_SUFFIX_TAGS, SUBSTANTIVE_TAGS, _is_cohesive_boundary
 
+from kornorm.phonology.apply_lut import PHONOLOGY_LUT
+
 from kornorm.utils.jamo import (
     O_NIEUN, O_RIEUL, O_MIEUM, O_IEUNG,
 
@@ -215,6 +217,17 @@ def norm29(tokens: List[MorphToken]) -> List[MorphToken]:
                         # 'ㄴ' 첨가 (단, 앞 받침이 'ㄹ'이면 'ㄹ' 첨가)
                         inserted_cho = O_RIEUL if curr_jong == C_RIEUL else O_NIEUN
                         next_token.jamo_str = inserted_cho + next_token.jamo_str[1:]
+
+                        # 공백을 넘은 첨가가 만든 "장애음 받침 + ㄴ" 연쇄는 여기서 비음화(제18항)까지
+                        # 마무리한다 (못 이겨[몬 니겨], 첫 입[천 닙]). 무공백 경계의 연쇄는 후속 LUT가
+                        # 처리하지만, 공백 앞 받침은 어말 대표음화만 받으므로 달리 이어 줄 규칙이 없다.
+                        # (제18항 붙임 전용 함수 norm18_a는 맨명사+용언 쌍만 보므로 여기 결속 쌍을 못 덮는다.)
+                        if crosses_space:
+                            rule_info = PHONOLOGY_LUT.get(curr_jong, {}).get(inserted_cho)
+                            if rule_info is not None and "18항" in rule_info[2]:
+                                new_jong, new_cho, _ = rule_info
+                                curr_token.jamo_str = curr_token.jamo_str[:-1] + new_jong
+                                next_token.jamo_str = new_cho + next_token.jamo_str[1:]
 
     return tokens
 
