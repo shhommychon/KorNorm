@@ -4,7 +4,8 @@
 
 
 from kornorm.alphanumeric.constants import (
-    SINO_DIGITS, RE_COMMAS, RE_DATE, RE_TIME, RE_PHONE, RE_FLOAT, RE_BOUND_NUM, RE_SINO_NUM
+    SINO_DIGITS, RE_COMMAS, RE_DATE, RE_TIME, RE_PHONE, RE_FLOAT, RE_BOUND_NUM, RE_SINO_NUM,
+    RE_INTERPUNCT_NUM,
 )
 from kornorm.alphanumeric.base import num_to_sino, num_to_native
 
@@ -98,6 +99,25 @@ def read_decimal_point(text: str, point_char: str = " 쩜 ", digit_map: dict = S
         fraction = "".join(digit_map.get(d, d) for d in m.group(2))
         return f"{integer}{point_char}{fraction}"
     return RE_FLOAT.sub(_repl, text)
+
+def read_interpunct_digits(text: str, digit_map: dict = SINO_DIGITS) -> str:
+    """
+    가운뎃점으로 묶인 숫자 표기(6·25, 3·1절)를 낱자 한자어 발음으로 변환합니다.
+
+    자릿수 읽기(25 -> 이십오)가 아니라 낱자 읽기(2, 5 -> 이오)를 적용해
+    "6·25[유기오]", "3·1절[사밀쩔]" 같은 관용 독법의 표기를 만듭니다.
+
+    Args:
+        text (str): 원본 텍스트.
+        digit_map (dict): 숫자별 한자어 매핑 사전.
+
+    Returns:
+        str: 가운뎃점 숫자가 낱자 발음으로 변환된 텍스트.
+    """
+    return RE_INTERPUNCT_NUM.sub(
+        lambda m: "".join(digit_map.get(c, c) for c in m.group(0) if c != '·'),
+        text,
+    )
 
 def convert_bound_numerals(text: str) -> str:
     """
