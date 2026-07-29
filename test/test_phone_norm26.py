@@ -207,6 +207,17 @@ class TestPhoneNorm26(unittest.TestCase):
     # ================================================================================
     # 제26항 다만 같은 한자가 겹쳐진 단어의 경우에는 된소리로 발음하지 않는다
     # ================================================================================
+    def test_norm26_commentary_sentences(self):
+        """통합 엔진 검증: 제26항 해설 확장 (접미사적 '증' 경음화) 포함 문장"""
+        sentence = self._strip_punctuation("스마트폰 중독증을 앓는 사람이 늘었고, 결정 장애증이 심하다.")
+        expected = "스마트폰 중독쯩을 알른 사라미 느럳꼬 결쩡 장애쯩이 심하다"
+        actual = apply_phonology(sentence, output_format="hangul")
+        g2pk_res = self.g2pk(sentence)
+
+        self.assert_kor_equal(expected, g2pk_res, log_only=True)
+
+        self.assert_kor_equal(expected, actual, log_only=False)
+
     def test_norm26_proviso_words(self):
         """개별 단어 검증: 제26항 다만 (같은 한자 겹침의 경음화 배제)"""
         cases = {

@@ -298,6 +298,56 @@ def norm26(tokens: List[MorphToken]) -> List[MorphToken]:
     return tokens
 
 
+# [제26항 해설 Commentary of Norm 26]
+#
+# 이 조항은 한자어에서 일어나는 특수한 경음화에 대해 규정하고 있다. ‘ㄹ’로 끝나는 한자와
+# ‘ㄷ, ㅅ, ㅈ’으로 시작하는 한자가 결합하면 ‘ㄷ, ㅅ, ㅈ’이 [ㄸ, ㅆ, ㅉ]과 같은 경음으로
+# 발음된다. ‘ㄷ, ㅅ, ㅈ’은 자음의 조음 위치에서, 입안의 중앙에서 발음된다는 공통점이 있다.
+# ‘ㄱ’이나 ‘ㅂ’과 같이 입안의 중앙이 아닌 양 끝에서 나는 자음에서는 경음화가 일어나지 않는다.
+# ‘갈증, 발동’에서는 경음화가 일어나지만 ‘갈구, 출발’에서는 경음화가 일어나지 않는 것이
+# 이를 보여 준다. 또한 ‘다만’에서 규정하고 있듯이 동일한 한자가 연속되어 만들어진 첩어에서는
+# ‘ㄹ’ 뒤에 ‘ㄷ, ㅅ, ㅈ’이 오더라도 경음화가 일어나지 않는다.
+#
+# Ref:
+#   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a419
+#
+# 위 해설이 예시한 '갈증[갈쯩]'류를 넘어, 접미사적 '증(症·證)'은 앞 명사의 끝소리가
+# 'ㄹ'이 아니어도 된소리 [쯩]으로 발음된다 (염증[염쯩], 통증[통쯩], 마비증[마비쯩],
+# 학생증[학쌩쯩]). 등재 합성어는 사전 발음 선적용이 처리하지만, 미등재 신조 합성어는
+# 형태소 분석이 "명사 + 증"으로 조각내므로 아래 함수가 일반화한다
+# (제12항 해설의 경음화 논의에서 출발해 제26항 한자어 경음화 계열로 이관한 항목).
+#
+#     스마트폰 중독증[중독쯩]
+#     결정 장애증[장애쯩]
+#
+# ※ 경음화 없는 '증' 결합(검증[검증], 입증, 고증 등)은 2음절 어근 한자어라 통등재
+#   단일 토큰으로 분석되므로 이 경로에 들어오지 않는다.
+def norm26_c(tokens: List[MorphToken]) -> List[MorphToken]:
+    """
+    제26항 해설 확장. 명사 뒤에 조각난 접미사적 '증(症·證)'을 된소리 [쯩]으로 발음합니다.
+
+    Args:
+        tokens (List[MorphToken]): 형태소 분석 및 자모 분해가 완료된 토큰 리스트.
+
+    Returns:
+        List[MorphToken]: 접미 '증'의 초성이 된소리로 치환된 토큰 리스트.
+    """
+    for i in range(1, len(tokens)):
+        curr_token = tokens[i]
+        # pecab이 접미 '증'에 부여하는 태그는 문맥에 따라 명사(NNG)·어근(XR)·접미사(XSN)로 흔들린다
+        if curr_token.surface != '증' or not curr_token.pos.startswith(('N', "XR", "XSN")):
+            continue
+
+        # 직전 토큰이 같은 어절의 명사일 때만 접미사 결합으로 본다 (공백 개입 시 미발동)
+        prev_token = tokens[i - 1]
+        if not prev_token.pos.startswith('N'):
+            continue
+
+        curr_token.jamo_str = FORTIS_MAPPING[curr_token.jamo_str[0]] + curr_token.jamo_str[1:]
+
+    return tokens
+
+
 # [제27항 Norm 27]
 #
 # 관형사형 ‘-(으)ㄹ’ 뒤에 연결되는 ‘ㄱ, ㄷ, ㅂ, ㅅ, ㅈ’은 된소리로 발음한다.
