@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kornorm"
+description = "Korean text preprocessing — text normalization + Standard Korean Pronunciation (표준발음법) G2P engine"
+readme = "PYPI.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [
+    {name = "shhommychon", email = "hommyfromkorea@gmail.com"},
+]
+keywords = [
+    "korean",
+    "g2p",
+    "text-normalization",
+    "phonology",
+    "pronunciation",
+]
+dependencies = [
+    "pecab",
+    "pyarrow",
+]
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/shhommychon/KorNorm"
+Issues = "https://github.com/shhommychon/KorNorm/issues"
+
+[tool.setuptools.packages.find]
+include = ["kornorm*"]
+
+[tool.setuptools.package-data]
+"kornorm.phonology" = ["_resources/*.arrow"]
+
+[tool.setuptools.dynamic]
+version = {attr = "kornorm.__version__"}

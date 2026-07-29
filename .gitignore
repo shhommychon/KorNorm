@@ -1,6 +1,6 @@
 ### custom gitignore ###
 .dev_phonology/
-
+kornorm/alphanumeric/_resources/cmudict*
 
 
 
