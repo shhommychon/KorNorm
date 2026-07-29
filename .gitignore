@@ -1,13 +1,17 @@
 ### custom gitignore ###
-
 # AI coding assistant setting files
 .cursorignore
 .geminiignore
+CODEX.md
 GEMINI.md
+CLAUDE.md
 
 # Git submodules
 .gitmodules
 
+# development-only artifacts
+.dev_phonology/
+kornorm/alphanumeric/_resources/cmudict*
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,venv,jupyternotebooks,visualstudiocode,linux,macos,windows
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,venv,jupyternotebooks,visualstudiocode,linux,macos,windows
