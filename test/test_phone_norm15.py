@@ -179,6 +179,17 @@ class TestPhoneNorm15(unittest.TestCase):
 
         self.assert_kor_equal(expected, actual, log_only=False)
 
+    def test_norm15_boundary_gating_sentences(self):
+        """통합 엔진 검증: 조사·어미로 끝난 어절 뒤에서는 공백을 넘는 절음이 발동하지 않아야 함"""
+        sentence = self._strip_punctuation("공부는 할수록 어려울 뿐이라 밭 아래 오두막에서 쉬었다.")
+        expected = "공부는 할쑤록 어려울 뿌니라 바 다래 오두마게서 쉬얻따"
+        actual = apply_phonology(sentence, output_format="hangul")
+        g2pk_res = self.g2pk(sentence)
+
+        self.assert_kor_equal(expected, g2pk_res, log_only=True)
+
+        self.assert_kor_equal(expected, actual, log_only=False)
+
     # ================================================================================
     # 제15항 다만 "맛있다", "멋있다" -> [마싣따], [머싣따] 허용
     # ================================================================================

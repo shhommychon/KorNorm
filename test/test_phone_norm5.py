@@ -243,7 +243,9 @@ class TestPhoneNorm5(unittest.TestCase):
     def test_norm5_proviso3_sentence(self):
         """통합 엔진 검증: 제5항 다만 3 케이스 포함 문장"""
         sentence = self._strip_punctuation("희망을 품고 닁큼 달려가 하얗게 희어 빛나는 무늬의 안경을 씌어 주며 희떱다고 장난을 치니, 마음이 확 틔어 마치 닐리리 가락에 맞춰 유희를 즐기듯 올바른 띄어쓰기로 글을 적었다.")
-        expected = "히망을 품꼬 닝큼 달려가 하야케 히어 빈나는 무니의 안경을 씨어 주며 히떱따고 장나늘 치니 마으미 확 티어 마치 닐리리 가라게 맏춰 유히를 즐기드 돌바른 띠어쓰기로 그를 저걷따"
+        # "즐기듯 올바른"은 어미(-듯)로 끝난 어절 뒤라 공백을 넘는 절음(제15항)을 하지 않는다
+        # (어절 결속도 공통 원칙 — [즐기드 돌바른]으로 잇지 않고 어말 중화만 적용).
+        expected = "히망을 품꼬 닝큼 달려가 하야케 히어 빈나는 무니의 안경을 씨어 주며 히떱따고 장나늘 치니 마으미 확 티어 마치 닐리리 가라게 맏춰 유히를 즐기듣 올바른 띠어쓰기로 그를 저걷따"
         actual = apply_phonology(sentence, output_format="hangul")
         g2pk_res = self.g2pk(sentence)
         
