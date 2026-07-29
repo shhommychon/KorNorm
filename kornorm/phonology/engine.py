@@ -29,6 +29,9 @@ from kornorm.phonology.chapter7 import (
 
 global_phonology_engine = None
 
+# 한자어 수사 낱자 (가운뎃점 숫자 정규화 "6·25 -> 육이오"가 만드는 문자 집합)
+_SINO_DIGIT_CHARS = "영공일이삼사오육칠팔구"
+
 def worker_init():
     global global_phonology_engine
     if global_phonology_engine is None:
@@ -213,7 +216,61 @@ class PhonologicProcessor:
             )
             tokens.append(token)
 
-        return tokens
+        return self._merge_numeral_headwords(tokens)
+
+    def _merge_numeral_headwords(self, tokens: List[MorphToken]) -> List[MorphToken]:
+        """
+        수사 낱자 나열이 사전 표제어를 이루면 하나의 토큰으로 병합합니다.
+
+        가운뎃점 숫자 정규화(6·25 -> 육이오)가 만든 한 글자 한자어 수사(NR) 나열을 pecab이
+        낱개로 조각내므로(육/NR+이/NR+오/NR), 이어 붙인 표면형이 표준국어대사전 표제어일
+        때에 한해 병합하여 사전 발음 선적용(육이오[유기오])이 닿을 수 있게 합니다.
+        표제어가 아니면 나열 전체를 원형 그대로 둡니다.
+
+        Args:
+            tokens (List[MorphToken]): 형태소 분석 및 자모 분해가 완료된 토큰 리스트.
+
+        Returns:
+            List[MorphToken]: 표제어 병합이 반영된 토큰 리스트.
+        """
+        if self.stdict_trie is None:
+            return tokens
+
+        merged = []
+        i = 0
+        while i < len(tokens):
+            j = i
+            while (
+                j < len(tokens)
+                and tokens[j].pos == "NR"
+                and len(tokens[j].surface) == 1
+                and tokens[j].surface in _SINO_DIGIT_CHARS
+            ):
+                j += 1
+
+            if j - i >= 2:
+                joined = "".join(t.surface for t in tokens[i:j])
+                dict_info = self.stdict_trie[joined]
+                if isinstance(dict_info, dict):
+                    merged.append(MorphToken(
+                        surface=joined,
+                        pos="NNG",
+                        start_offset=tokens[i].start_offset,
+                        end_offset=tokens[j - 1].end_offset,
+                        jamo_str=decompose(joined),
+                        is_hanja=(dict_info.get("is_hanja") == '1'),
+                        compound_structure=dict_info.get("compound_structure", ''),
+                        pronunciation=dict_info.get("pronunciation", ''),
+                    ))
+                else:
+                    merged.extend(tokens[i:j])
+                i = j
+                continue
+
+            merged.append(tokens[i])
+            i += 1
+
+        return merged
 
     def __call__(
         self,
