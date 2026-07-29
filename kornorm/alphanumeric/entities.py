@@ -33,17 +33,21 @@ def read_unit_exceptions(text: str, symbol_map: dict = SYMBOL_MAP) -> str:
     """
     단위 정규화 전, 5G나 mp3와 같이 관용적으로 읽히는 영숫자 결합 예외를 처리합니다.
 
+    더 큰 영숫자 토큰의 일부를 오인 치환하지 않도록 앞뒤 경계를 검사합니다
+    (예: "3.5GHz"의 "5G", "15GB"의 "5G"는 치환하지 않고 단위 정규화에 넘긴다).
+
     Args:
         text (str): 원본 텍스트.
         symbol_map (dict): 예외 단어별 한글 발음 매핑 사전.
-        
+
     Returns:
         str: 예외 단어들이 한글로 치환된 텍스트.
     """
     for key, val in symbol_map.items():
-        text = text.replace(key, val)
-        text = text.replace(key.upper(), val)
-        text = text.replace(key.lower(), val)
+        for variant in {key, key.upper(), key.lower()}:
+            pattern = re.compile(
+                f"(?<![A-Za-z0-9.]){re.escape(variant)}(?![A-Za-z0-9])")
+            text = pattern.sub(val, text)
     return text
 
 def read_units(text: str, units_map: dict = UNITS_MAP) -> str:
@@ -92,8 +96,10 @@ def read_alphanum_combos(text: str, digit_map: dict = ENG_DIGITS) -> str:
             else:
                 res.append(alphabet_to_hangul(c))
         return "".join(res)
-        
-    return re.sub(r"([a-zA-Z]\d+|\d+[a-zA-Z])[a-zA-Z\d]*", _repl, text)
+
+    # 숫자 선행 분기는 한 자리 숫자로 제한한다 (3M -> 쓰리엠). 여러 자리 숫자가 앞서는
+    # 토큰(220V 등)은 낱자 조합이 아니라 수사+낱자(이백이십븨)로 읽히도록 남겨 둔다.
+    return re.sub(r"([a-zA-Z]\d+|(?<!\d)\d[a-zA-Z])[a-zA-Z\d]*", _repl, text)
 
 def read_abbreviations(text: str) -> str:
     """

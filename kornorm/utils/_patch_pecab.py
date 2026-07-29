@@ -7,6 +7,10 @@ from pecab._datrie import DoubleArrayTrie
 
 MARKER_FILE = ".kornorm_patched"
 
+# 패치 내용(제외/추가/코스트 목록)이 바뀔 때마다 1씩 올린다.
+# 마커 파일에 기록된 리비전과 불일치하면 사전을 다시 패치한다.
+PATCH_REVISION = 2
+
 # NOTE: MORPHEMES_TO_EXCLUDE 제거 배경
 #
 # 1. 문제 상황: 
@@ -503,6 +507,7 @@ MORPHEMES_TO_EXCLUDE = (
     "샬롯월스",
     "샬롯웰러",
     "서릊이",
+    "서울역",
     "섞음열",
     "섞일지",
     "성당못역",
@@ -969,18 +974,61 @@ MORPHEMES_TO_EXCLUDE = (
     "흰잎엉겅퀴",
 )
 
+# NOTE: WORD_COSTS_TO_SET 도입 배경
+#
+# pecab 사전에 표제어가 멀쩡히 등재되어 있어도, 단독 어절 입력(문장 경계 인접)에서는
+# 조각 분석이 이기는 경우가 있다 (예: "절도" -> 절/NNG+도/JX, "줄넘기" -> 줄/NNB+넘/VV+기/ETN).
+# 아래 명사들의 NNG word_cost를 낮춰 단독 입력에서도 표제어 분석이 이기도록 보정한다.
+# 문맥이 있는 문장에서는 연접 비용이 지배하므로 기존 분석에 영향이 없음을 확인했다
+# ("그 절도 아름답다" -> 절/NNG+도/JX 유지).
+WORD_COSTS_TO_SET = {
+    "길가": "1000",
+    "말살": "1000",
+    "절도": "1000",
+    "줄넘기": "1000",
+}
+
+# NOTE: MORPHEMES_TO_ADD 도입 배경
+#
+# "입원료"는 표준국어대사전 표제어이자 표준 발음법 제20항 다만의 규범 예시이지만
+# pecab 사전에 없어 입/NNG+원료/NNG로 오분석된다 ("원료" 내부 유음화로 [이붤료] 오발음).
+# 단일 명사로 등재하여 표제어 발음([이붠뇨]) 선적용이 닿을 수 있게 한다.
+# 속성은 동일 계열 명사("원료" 등, left_id 1780/right_id 3533)에서 복제한다.
+MORPHEMES_TO_ADD = {
+    "입원료": {
+        "left_id": "1780",
+        "right_id": "3533",
+        "word_cost": "1500",
+        "POS": "NNG",
+        "POS_type": "MORP",
+        "morphemes": "None",
+    },
+}
+
 def patch_pecab_dictionary_if_needed():
     """
     pecab 사전을 KorNorm에 맞게 1회성으로 런타임 직전에 영구 패치합니다.
 
-    이미 패치된 경우(마커 파일 존재) 즉시 통과하여 로딩 속도에 영향을 주지 않습니다.
+    현재 리비전으로 이미 패치된 경우(마커 파일의 리비전 일치) 즉시 통과하여
+    로딩 속도에 영향을 주지 않습니다. 패치 목록이 갱신되면(리비전 상승) 재패치합니다.
+
+    표층어 병합('|')과 DAT 재빌드·Arrow IPC 직렬화 구조는 pecab이 자체 사전을
+    빌드하는 방식을 그대로 따릅니다.
+
+    Ref:
+        pecab _resources/_convert_to_arrow.py
+        — https://github.com/hyunwoongko/pecab/blob/main/pecab/_resources/_convert_to_arrow.py
     """
     pecab_resource_dir = os.path.join(os.path.dirname(pecab.__file__), "_resources")
     marker_path = os.path.join(pecab_resource_dir, MARKER_FILE)
+    marker_content = f"patched by kornorm (revision {PATCH_REVISION})"
 
-    # 1. 이미 패치되었다면 조용히 리턴
+    # 1. 현재 리비전으로 이미 패치되었다면 조용히 리턴
+    #    (구 리비전 마커나 리비전 없는 마커는 재패치 대상 — 제외/추가/코스트 연산은 전부 멱등)
     if os.path.exists(marker_path):
-        return
+        with open(marker_path, 'r', encoding="utf-8") as f:
+            if f.read().strip() == marker_content:
+                return
 
     print("KorNorm: 최초 실행을 감지했습니다. 최적화된 형태소 사전을 빌드합니다...")
 
@@ -1006,7 +1054,17 @@ def patch_pecab_dictionary_if_needed():
             
         # 표층어(surface)를 포함한 전체 속성을 딕셔너리로 구성하여 데이터 정합성 유지
         entry_dict = {k: str(columns_data[k][i]) for k in col_names}
-        
+
+        # 단독 어절 코스트 보정: NNG 위치의 word_cost만 목표값으로 교체
+        # (원본 행과 재패치 시의 '|' 병합 행 모두 동일하게 처리됨)
+        if surface in WORD_COSTS_TO_SET:
+            poses = entry_dict["POS"].split('|')
+            costs = entry_dict["word_cost"].split('|')
+            entry_dict["word_cost"] = '|'.join(
+                WORD_COSTS_TO_SET[surface] if pos == "NNG" else cost
+                for pos, cost in zip(poses, costs)
+            )
+
         if surface not in data:
             data[surface] = entry_dict
         else:
@@ -1015,10 +1073,15 @@ def patch_pecab_dictionary_if_needed():
                 if k != 'surface':
                     data[surface][k] += f"|{v}"
 
-    # 4. DAT 재빌드
+    # 4. 누락 표제어 등재 (기등재 표층어는 건드리지 않음 — 멱등 보장)
+    for surface, attrs in MORPHEMES_TO_ADD.items():
+        if surface not in data:
+            data[surface] = {"surface": surface, **attrs}
+
+    # 5. DAT 재빌드
     trie = DoubleArrayTrie(data)
 
-    # 5. 재빌드된 DAT를 PyArrow Table(Columnar 포맷)로 변환
+    # 6. 재빌드된 DAT를 PyArrow Table(Columnar 포맷)로 변환
     # trie._value의 딕셔너리 리스트 구조를 각 컬럼별 리스트로 재구성합니다.
     reconstructed_cols = {}
     for prop in col_names:
@@ -1030,7 +1093,7 @@ def patch_pecab_dictionary_if_needed():
         "check": trie._check
     })
 
-    # 6. 원본 덮어쓰기
+    # 7. 원본 덮어쓰기
     with pa.OSFile(words_path, "wb") as sink:
         with pa.RecordBatchFileWriter(sink, new_words_table.schema) as writer:
             writer.write_table(new_words_table)
@@ -1039,11 +1102,11 @@ def patch_pecab_dictionary_if_needed():
         with pa.RecordBatchFileWriter(sink, new_arrays_table.schema) as writer:
             writer.write_table(new_arrays_table)
             
-    # 7. 마커 파일 생성 (이 패치 과정이 여러번 돌지 않도록 방지)
+    # 8. 마커 파일 생성 (같은 리비전의 패치가 여러번 돌지 않도록 방지)
     with open(marker_path, 'w', encoding="utf-8") as f:
-        f.write("patched by kornorm")
-    
-    # 8. pip uninstall 시 함께 삭제되도록 pecab의 RECORD 파일 수정
+        f.write(marker_content)
+
+    # 9. pip uninstall 시 함께 삭제되도록 pecab의 RECORD 파일 수정
     try:
         pecab_pkg_dir = Path(pecab.__file__).parent
         site_packages_dir = pecab_pkg_dir.parent
@@ -1055,8 +1118,11 @@ def patch_pecab_dictionary_if_needed():
                 # RECORD 파일은 site-packages 기준 상대 경로를 사용
                 # hash와 size는 빈칸으로 두어도 삭제하는 데는 문제 없음
                 relative_marker_path = f"pecab/_resources/{MARKER_FILE}"
-                with open(record_path, "a", encoding="utf-8", newline="") as f:
-                    f.write(f"{relative_marker_path},,\n")
+                with open(record_path, 'r', encoding="utf-8") as f:
+                    already_recorded = relative_marker_path in f.read()
+                if not already_recorded:
+                    with open(record_path, "a", encoding="utf-8", newline="") as f:
+                        f.write(f"{relative_marker_path},,\n")
                 break
     except Exception as e:
         print(f"KorNorm: pecab RECORD 파일 업데이트 실패 (무시됨) - {e}")

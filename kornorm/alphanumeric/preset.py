@@ -39,12 +39,13 @@ def dealers_choice(text: str) -> str:
     text = read_date_format(text)
     text = read_time_format(text)
     
-    # 5. 소수점
-    text = read_decimal_point(text)
-    
-    # 6. 단위
+    # 5. 단위 (소수점 변환보다 먼저 실행해야 "3.5GHz"의 단위가 숫자 소실 전에 붙는다:
+    #    소수점이 먼저 돌면 "삼 쩜 오GHz"가 되어 단위 패턴(숫자+단위)이 빗나간다)
     text = read_unit_exceptions(text)
     text = read_units(text)
+
+    # 6. 소수점
+    text = read_decimal_point(text)
     
     # 7. 소문자+숫자 / 대문자+숫자
     text = read_alphanum_combos(text)

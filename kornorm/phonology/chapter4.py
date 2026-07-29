@@ -911,6 +911,12 @@ def norm15(tokens: List[MorphToken]) -> List[MorphToken]:
 #
 # Ref:
 #   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a408
+
+# 제15항 다만이 직접 열거한 폐쇄 목록. 본 엔진은 이 두 단어에 한해 허용형([마싣따]·[머싣따])을
+# 채택하므로(norm15_p), 원칙형([마딛따]·[머딛따])을 실은 stdict 용언 '-다' 표제어 폴백
+# (engine._tokenize_and_tag)이 선점하지 않도록 하는 가드로 쓰인다.
+_NORM15_PROVISO_LEMMAS = ("맛있다", "멋있다")
+
 def norm15_p(tokens: List[MorphToken]) -> List[MorphToken]:
     """"
     제15항 다만. "맛있다", "멋있다"는 [마싣따], [머싣따]로도 발음할 수 있다.
