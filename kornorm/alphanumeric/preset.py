@@ -14,17 +14,18 @@ from kornorm.alphanumeric.entities import (
     read_alphanum_combos, read_abbreviations, read_special_symbols
 )
 from kornorm.alphanumeric.base import alphabet_to_hangul
+from kornorm.alphanumeric.english import read_english_words
 
 
 def dealers_choice(text: str) -> str:
     """
     기호, 단위, 숫자, 영문 정규화를 순차적으로 수행하는 통합 프리셋입니다.
-    
+
     Args:
         text (str): 원본 텍스트.
-        
+
     Returns:
-        str: 12단계 정규화가 모두 완료된 한글 텍스트.
+        str: 13단계 정규화가 모두 완료된 한글 텍스트.
     """
     # 1. 쉼표 제거
     text = remove_commas(text)
@@ -63,7 +64,10 @@ def dealers_choice(text: str) -> str:
     # 11. 예외 사항 적용
     text = fix_num_exceptions(text)
     
-    # 12. 잔류 알파벳 처리
+    # 12. 영어 단어 발음 변환 (CMU 사전 등재어: "old school" -> "올드 스쿨")
+    text = read_english_words(text)
+
+    # 13. 잔류 알파벳 처리 (사전 미등재 단어·낱자는 알파벳 이름으로 읽기)
     text = re.sub(r"[a-zA-Z]", lambda m: alphabet_to_hangul(m.group(0)), text)
-    
+
     return text
