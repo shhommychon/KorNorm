@@ -150,6 +150,17 @@ results = pipe(lines)
 
 <br clear="right">
 
+## Module guides
+
+The four packages each ship their own reference — every function they expose, what it does, and an example that was actually run through it:
+
+| | |
+|---|---|
+| [`kornorm.alphanumeric`](kornorm/alphanumeric/README.md) | numbers, units, currencies, symbols, abbreviations and English words → hangul; the 14 steps of `dealers_choice` and how to use them one at a time |
+| [`kornorm.phonology`](kornorm/phonology/README.md) | the 표준발음법 engine — rule-by-rule coverage, pipeline order, the 2D LUT, the dictionary-first pass, word-boundary policy |
+| [`kornorm.heuristics`](kornorm/heuristics/README.md) | pre-cleaning helpers for text that came from somewhere real |
+| [`kornorm.utils`](kornorm/utils/README.md) | positional-jamo primitives and the one-time pecab dictionary patch |
+
 ## Known limitations (alpha)
 
 - The first-run setup cannot complete in read-only environments (e.g. locked-down Docker images) — make the first call once with write access to `site-packages`.
