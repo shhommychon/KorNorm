@@ -1,0 +1,43 @@
+# KorNorm 배포 워크플로 — v* 태그를 푸시하면 PyPI에 게시합니다.
+#
+# PyPI Trusted Publisher(OIDC)로 인증하므로 API 토큰을 저장소 시크릿에 두지 않습니다.
+# 사전 준비: PyPI에 이 저장소·워크플로 파일명·환경 이름(pypi)을 게시자로 등록하고,
+# 저장소 Settings > Environments에 "pypi" 환경을 만들어야 합니다.
+
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      # Trusted Publisher 인증에 쓰이는 OIDC 토큰 발급 권한
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Verify tag matches package version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' kornorm/__init__.py)"
+          if [ "$tag" != "$version" ]; then
+            echo "tag '$tag' does not match kornorm.__version__ '$version'" >&2
+            exit 1
+          fi
+
+      - name: Build distributions
+        run: |
+          python -m pip install --upgrade build
+          python -m build
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
