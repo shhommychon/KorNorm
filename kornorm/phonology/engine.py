@@ -6,7 +6,7 @@ import os
 from typing import List, Literal
 
 from kornorm.utils._patch_pecab import patch_pecab_dictionary_if_needed
-from kornorm.utils.jamo import decompose, join_jamos, to_compat_jamo
+from kornorm.utils.jamo import O_GIYEOK, O_HIEUT, decompose, join_jamos, to_compat_jamo
 
 from kornorm.phonology.common import MorphToken
 from kornorm.phonology.apply_lut import apply_phonology_lut
@@ -43,6 +43,12 @@ def apply_phonology(text: str, output_format: str = "positional") -> str:
     if global_phonology_engine is None:
         global_phonology_engine = PhonologicProcessor()
     return global_phonology_engine(text, output_format=output_format)
+
+def pos(text: str, drop_space: bool = True) -> List[tuple]:
+    global global_phonology_engine
+    if global_phonology_engine is None:
+        global_phonology_engine = PhonologicProcessor()
+    return global_phonology_engine.pos(text, drop_space=drop_space)
 
 
 def apply_stdict_pronunciation(tokens: List[MorphToken]) -> List[MorphToken]:
@@ -174,6 +180,13 @@ class PhonologicProcessor:
             raw_output["pos_tags"],
             raw_output["offsets"]
         ):
+            # pecab은 한자 원문·호환 자모 낱자 등을 어휘 태그(NNG, UNKNOWN 등)로 돌려주기도 한다.
+            # 완성형 음절이 아닌 표면형은 초-중-종 3자모로 분해되지 않아 규칙 파이프라인의
+            # 전제("S 계열이 아닌 토큰의 jamo_str은 3자모 단위")가 깨지므로, 기호 계열로
+            # 재태깅해 규칙 적용과 출력 포맷팅 모두 표면형을 그대로 흘리게 한다.
+            if not pos.startswith('S') and not all('가' <= ch <= '힣' for ch in term):
+                pos = "SH" if all('一' <= ch <= '鿿' for ch in term) else "SY"
+
             is_h = False
             comp_str = ''
             pron_str = ''
@@ -224,6 +237,28 @@ class PhonologicProcessor:
             tokens.append(token)
 
         return self._merge_numeral_headwords(tokens)
+
+    def pos(self, text: str, drop_space: bool = True) -> List[tuple]:
+        """
+        엔진의 형태소 분석 결과를 (표면형, 품사 태그) 튜플 목록으로 돌려줍니다.
+
+        반환되는 것은 순정 pecab이 아니라 이 엔진의 시점입니다 — 사전 패치
+        (_patch_pecab), 수사 낱자 병합(육/NR+이/NR+오/NR -> 육이오), 완성형이 아닌
+        표면형(한자 원문·호환 자모 낱자)의 S 계열 재태깅이 모두 반영된 결과라
+        pecab을 직접 돌린 것과 다를 수 있습니다.
+
+        Args:
+            text (str): 분석할 텍스트.
+            drop_space (bool): True면 공백(SP) 토큰을 제외합니다 (pecab의 pos() 관례).
+
+        Returns:
+            List[tuple]: (표면형, 품사 태그) 튜플의 리스트.
+        """
+        return [
+            (token.surface, token.pos)
+            for token in self._tokenize_and_tag(text)
+            if not (drop_space and token.pos == "SP")
+        ]
 
     def _merge_numeral_headwords(self, tokens: List[MorphToken]) -> List[MorphToken]:
         """
@@ -355,7 +390,10 @@ class PhonologicProcessor:
         # 출력 포맷팅
         result_chars = []
         for token in tokens:
-            if token.pos == "SP":
+            # 공백(SP)·영문(SL)·숫자(SN)·기호(SY, SF 등)·한자(SH) 등 S 계열은 자모가 없어
+            # 음절 조립의 전제(초-중-종 3자모)가 성립하지 않으므로 표면형을 그대로 흘린다.
+            # 자모 변동에서 이들을 제외하는 각 규칙 모듈의 기준과 동일하다.
+            if token.pos.startswith('S'):
                 result_chars.append(token.surface)
             else:
                 if output_format == "positional":
@@ -364,12 +402,18 @@ class PhonologicProcessor:
                 elif output_format == "compat":
                     result_chars.append(to_compat_jamo(token.jamo_str))
                 elif output_format == "hangul":
-                    jamo_len = len(token.jamo_str)
-                    for i in range(0, jamo_len, 3):
-                        cho = token.jamo_str[i]
-                        joong = token.jamo_str[i+1]
-                        jong = token.jamo_str[i+2]
-                        result_chars.append(join_jamos(cho, joong, jong))
+                    jamo_str = token.jamo_str
+                    jamo_len = len(jamo_str)
+                    i = 0
+                    while i < jamo_len:
+                        # 초성으로 시작하는 3자모만 음절로 조립하고,
+                        # 미분석어에 섞여 든 비한글 문자는 한 글자씩 그대로 흘린다
+                        if i + 2 < jamo_len and O_GIYEOK <= jamo_str[i] <= O_HIEUT:
+                            result_chars.append(join_jamos(jamo_str[i], jamo_str[i+1], jamo_str[i+2]))
+                            i += 3
+                        else:
+                            result_chars.append(jamo_str[i])
+                            i += 1
                 else:
                     raise ValueError("output_format must be \"positional\", \"compat\", or \"hangul\"")
 

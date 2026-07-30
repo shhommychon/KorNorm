@@ -12,10 +12,10 @@
 KorNorm (고놈) turns raw Korean text — digits, units, symbols, English words and all — into hangul that reads the way a Korean speaker would actually say it out loud. It was built with TTS front-ends in mind, but it is just as much at home normalizing ASR transcripts, building pronunciation dictionaries, or anywhere else Korean text needs to match speech.
 
 ```pycon
->>> from kornorm import normalize
->>> normalize("6·25 전쟁은 1950년에 일어났다")
+>>> from kornorm import dealers_choice, apply_phonology
+>>> apply_phonology(dealers_choice("6·25 전쟁은 1950년에 일어났다"), output_format="hangul")
 '유기오 전쟁은 천구배고심녀네 이러낟따'
->>> normalize("이 old school 감성의 MP3 파일은 3.5MB밖에 안 한다")
+>>> apply_phonology(dealers_choice("이 old school 감성의 MP3 파일은 3.5MB밖에 안 한다"), output_format="hangul")
 '이 올드 스쿨 감성의 엠피쓰리 파이른 삼 쩜 오메가바이트바께 안 한다'
 ```
 
@@ -29,7 +29,7 @@ Pure Python (3.10+). The only dependencies are [pecab](https://github.com/hyunwo
 
 **On first use**, KorNorm performs a one-time setup:
 
-- it patches and rebuilds pecab's bundled dictionary (takes about a minute), and
+- it patches and rebuilds pecab's bundled dictionary (takes about 40 seconds), and
 - it downloads the CMU Pronouncing Dictionary (~3.6 MB) for English word conversion. If the download fails (e.g. offline), everything else still works — English words are simply left as spelled-out letters.
 
 Both steps write into `site-packages`, so make the first call in an environment with write access (see [Known limitations](#known-limitations-alpha)).
@@ -48,14 +48,14 @@ To get a taste of the kind of features bundled in, here is one of the small help
 
 The main course is below.
 
-### `normalize` — everything in one call
+### Two functions, one chain
 
-Normalization first, then pronunciation. This is the recommended entry point:
+KorNorm keeps its two jobs as two functions: `dealers_choice` normalizes text into hangul, `apply_phonology` turns hangul into pronunciation. Chain them when you want both:
 
 ```python
-from kornorm import normalize
+from kornorm import dealers_choice, apply_phonology
 
-normalize("몸무게가 70.5kg 나간다")
+apply_phonology(dealers_choice("몸무게가 70.5kg 나간다"), output_format="hangul")
 # '몸무게가 칠씹 쩜 오킬로그램 나간다'
 ```
 
@@ -93,7 +93,7 @@ Three output formats, matching common speech-model input conventions:
 
 | `output_format` | `apply_phonology("독립문", …)` | |
 |---|---|---|
-| `"hangul"` | `동님문` | composed syllables (default of `normalize`) |
+| `"hangul"` | `동님문` | composed syllables, for human reading |
 | `"positional"` | `동님문` | U+11xx conjoining jamo (default; most fonts render it composed) |
 | `"compat"` | `ㄷㅗㅇㄴㅣㅁㅁㅜㄴ` | U+313x compatibility jamo |
 
@@ -124,12 +124,21 @@ processor("독립문", output_format="hangul")  # '동님문'
 
 <img src=".assets/image/kornorm_fullbody_tall.png" alt="StreamPipeline" align="right" width="200">
 
+Both pipelines take any `str` → `str` function. Define your recipe once, at module top level (that keeps it picklable for multiprocessing):
+
+```python
+from kornorm import dealers_choice, apply_phonology
+
+def preprocess(line: str) -> str:
+    return apply_phonology(dealers_choice(line), output_format="hangul")
+```
+
 **`StreamPipeline`** sweeps through your corpus one line at a time — a lazy generator with minimal memory footprint, for when the file is bigger than your RAM:
 
 ```python
-from kornorm import StreamPipeline, normalize
+from kornorm import StreamPipeline
 
-pipe = StreamPipeline(normalize)
+pipe = StreamPipeline(preprocess)
 with open("corpus.txt") as f:
     for line in pipe(f):
         ...
@@ -139,21 +148,32 @@ with open("corpus.txt") as f:
 
 <img src=".assets/image/kornorm_fullbody_short.png" alt="BatchPipeline" align="right" width="200">
 
-**`BatchPipeline`** puts its back into it — multiprocessing across CPU cores for when you want the whole corpus done now. Functions must be top-level (picklable), and each worker loads its own copy of the engine:
+**`BatchPipeline`** puts its back into it — multiprocessing across CPU cores for when you want the whole corpus done now. Each worker loads its own copy of the engine:
 
 ```python
-from kornorm import BatchPipeline, normalize
+from kornorm import BatchPipeline
 
-pipe = BatchPipeline(normalize, max_workers=8)
+pipe = BatchPipeline(preprocess, max_workers=8)
 results = pipe(lines)
 ```
 
 <br clear="right">
 
+## Module guides
+
+The four packages each ship their own reference — every function they expose, what it does, and an example that was actually run through it:
+
+| | |
+|---|---|
+| [`kornorm.alphanumeric`](kornorm/alphanumeric/README.md) | numbers, units, currencies, symbols, abbreviations and English words → hangul; the 14 steps of `dealers_choice` and how to use them one at a time |
+| [`kornorm.phonology`](kornorm/phonology/README.md) | the 표준발음법 engine — rule-by-rule coverage, pipeline order, the 2D LUT, the dictionary-first pass, word-boundary policy |
+| [`kornorm.heuristics`](kornorm/heuristics/README.md) | pre-cleaning helpers for text that came from somewhere real |
+| [`kornorm.utils`](kornorm/utils/README.md) | positional-jamo primitives and the one-time pecab dictionary patch |
+
 ## Known limitations (alpha)
 
 - The first-run setup cannot complete in read-only environments (e.g. locked-down Docker images) — make the first call once with write access to `site-packages`.
-- Inputs with unusual punctuation may trip the morphological analyzer; numbers, common symbols, and everything `dealers_choice` handles are safe.
+- Symbols outside the conversion tables (`…`, `½`, emoji) pass through unread, and the unit table — broad as it is — is not exhaustive: a compound unit it cannot match is read as best the later steps can (`120km/h` → `백이십킬로미터슬래쉬에이치`).
 - Context-dependent homographs (잠자리 bed/dragonfly, …) are resolved by a cue-word vote, which is an approximation.
 - Not yet implemented: email/URL reading, spacing correction, sentence-ending unification.
 

@@ -1,1 +1,1 @@
-from kornorm.phonology.engine import PhonologicProcessor, apply_phonology
+from kornorm.phonology.engine import PhonologicProcessor, apply_phonology, pos
