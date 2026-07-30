@@ -18,6 +18,18 @@ A rule-by-rule implementation of 표준발음법 (the Standard Korean Pronunciat
 
 `apply_phonology` is a thin wrapper that keeps one module-level engine alive; `PhonologicProcessor` is that engine, callable like g2pK's `G2p`. For multiprocessing there is `worker_init` (`from kornorm.phonology.engine import worker_init`), meant as a `BatchPipeline` initializer so each worker builds its own engine exactly once.
 
+The same engine's morphological analysis is exposed as `pos` — either the method on the processor or the module-level wrapper (`from kornorm.phonology import pos`), which reuses the same shared engine:
+
+```pycon
+>>> from kornorm.phonology import pos
+>>> pos("맑게 갠 하늘")
+[('맑', 'VA'), ('게', 'EC'), ('갠', 'VV+ETM'), ('하늘', 'NNG')]
+>>> pos("낮 한때", drop_space=False)
+[('낮', 'NNG'), (' ', 'SP'), ('한', 'XSA+ETM'), ('때', 'NNG')]
+```
+
+What comes back is **the engine's view**, not vanilla pecab: the [dictionary patch](../utils/README.md) has been applied, numeral headwords are merged back together (육/NR+이/NR+오/NR → `('육이오', 'NNG')`), and surfaces that cannot decompose into syllables are re-classed as symbols (`('漢字', 'SH')`). Spaces are dropped by default, pecab-style; pass `drop_space=False` to keep them.
+
 | `output_format` | `"독립문"` becomes | Codepoints |
 |---|---|---|
 | `"positional"` (default) | 동님문 | conjoining jamo, `U+1103 U+1169 U+11BC …` |

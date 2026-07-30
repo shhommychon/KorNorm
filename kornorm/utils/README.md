@@ -53,6 +53,7 @@ Mechanics worth knowing:
 - **`PATCH_REVISION`** is written into a marker file (`.kornorm_patched`) inside pecab's resource directory. A matching revision short-circuits the whole function, so startup stays fast; bump the constant when the lists change and every installation re-patches itself on next run. All three operations are idempotent.
 - The rebuild follows pecab's own build path — surface merging with `'|'`, `DoubleArrayTrie` construction, Arrow IPC serialization — so the result is a dictionary pecab reads natively.
 - The marker file is appended to pecab's `RECORD`, so `pip uninstall pecab` removes it too.
+- Because the installed dictionary itself is rewritten, a `Pecab()` you construct yourself in the same environment also uses the patched dictionary. This is the intended contract — the patch fixes pronunciations the stock dictionary gets wrong, and there is one dictionary per environment — but if you need stock pecab behavior, use a separate environment.
 - **It writes into `site-packages`.** In a read-only environment (a locked-down container, for example) the first call fails; run it once where the filesystem is writable. Redirecting the cache elsewhere was considered and rejected.
 
 The first run prints a short notice and takes a while — it rebuilds the whole trie, which together with the CMU dictionary download in `alphanumeric` is where the ~40 seconds of first-call setup goes. Every later run does nothing but read one small file.

@@ -44,6 +44,12 @@ def apply_phonology(text: str, output_format: str = "positional") -> str:
         global_phonology_engine = PhonologicProcessor()
     return global_phonology_engine(text, output_format=output_format)
 
+def pos(text: str, drop_space: bool = True) -> List[tuple]:
+    global global_phonology_engine
+    if global_phonology_engine is None:
+        global_phonology_engine = PhonologicProcessor()
+    return global_phonology_engine.pos(text, drop_space=drop_space)
+
 
 def apply_stdict_pronunciation(tokens: List[MorphToken]) -> List[MorphToken]:
     """
@@ -231,6 +237,28 @@ class PhonologicProcessor:
             tokens.append(token)
 
         return self._merge_numeral_headwords(tokens)
+
+    def pos(self, text: str, drop_space: bool = True) -> List[tuple]:
+        """
+        엔진의 형태소 분석 결과를 (표면형, 품사 태그) 튜플 목록으로 돌려줍니다.
+
+        반환되는 것은 순정 pecab이 아니라 이 엔진의 시점입니다 — 사전 패치
+        (_patch_pecab), 수사 낱자 병합(육/NR+이/NR+오/NR -> 육이오), 완성형이 아닌
+        표면형(한자 원문·호환 자모 낱자)의 S 계열 재태깅이 모두 반영된 결과라
+        pecab을 직접 돌린 것과 다를 수 있습니다.
+
+        Args:
+            text (str): 분석할 텍스트.
+            drop_space (bool): True면 공백(SP) 토큰을 제외합니다 (pecab의 pos() 관례).
+
+        Returns:
+            List[tuple]: (표면형, 품사 태그) 튜플의 리스트.
+        """
+        return [
+            (token.surface, token.pos)
+            for token in self._tokenize_and_tag(text)
+            if not (drop_space and token.pos == "SP")
+        ]
 
     def _merge_numeral_headwords(self, tokens: List[MorphToken]) -> List[MorphToken]:
         """
