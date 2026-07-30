@@ -43,6 +43,7 @@ venv/bin/python -m unittest test.test_normalize
 - `kornorm/utils/jamo.py` — U+11xx 위치 기반 자모 상수(`O_*`/`N_*`/`C_*`)·분해·조합. `_patch_pecab.py` — pecab 사전 lazy 패처(`PATCH_REVISION` 마커, 제외·추가·코스트 보정).
 - `test/` — 규칙별 테스트. `test_phone_normN.py`는 직전 파일과 완전 동일 형식(헬퍼 5종 verbatim, 본항/다만/붙임별 words+sentences).
 - `pyproject.toml`·`PYPI.md` — 0.0.0a1 패키징(버전 단일 소스는 `kornorm.__version__`, PyPI readme는 PYPI.md, 저장소 README는 이미지 포함 영문판).
+- `.github/workflows/publish.yml` — `v*` 태그 푸시 시 PyPI 자동 게시(Trusted Publisher OIDC, 토큰 미보관). 태그와 `__version__` 불일치 시 빌드 전 실패.
 - `.dev_phonology/` — stdict Arrow 빌더(`build_stdict_arrow.py`, -f로 추적)·LUT 빌더·pecab 사전 분석 노트북 (디렉토리 자체는 gitignore).
 
 ## 4. 엔진 아키텍처 요지
@@ -71,20 +72,26 @@ venv/bin/python -m unittest test.test_normalize
 13. develop 병합: 정규화 계열(`feature/cleaner`)과 음운 엔진 계열(`feature/better-g2pK`) 통합.
 14. 0.0.0a1 준비 라운드(Phase 1~9): 기지 실패 9건 전소탕 — pecab 패치 채널 확장(`PATCH_REVISION`·코스트 보정·엔트리 추가), 용언 '-다' 폴백, stdict Arrow 빌더 재작성+재컴파일(물질 동형어·입원료), dealers_choice 재정렬(단위→소수점). 신규 기능 — 영단어 발음(`english.py`+cmudict 자가 다운로드), 통합 `normalize`(+가운뎃점 낱자·수사 병합), 문맥 동형어(잠자리)·"-증" 경음화(norm26_c), norm15 절음 게이트·norm29 공백 첨가 연쇄 완결.
 15. 참고 서브모듈 전체 삭제 + 패키징: pyproject.toml·PYPI.md 신설, 공개 API export(`__version__`·`dealers_choice`·`apply_phonology`·`PhonologicProcessor`·heuristics), README 영문 개편(캐릭터 이미지 활용).
+16. **0.0.0a1 릴리스(2026-07-30)**: LICENSE 0.2.0 개정(AI 생성분 명시), master 머지·`v0.0.0a1` 태그, GitHub Actions 자동 배포 워크플로 신설, PyPI 게시 완료. 설치본 전반 점검 36항목 통과(파이썬 3.12 환경 포함).
 
 ## 6. 현재 상태 (develop 기준)
 
+- **0.0.0a1이 PyPI에 게시됨** (2026-07-30). `pip install kornorm`으로 설치 가능. master는 태그 `v0.0.0a1`(→ 머지 커밋)까지 진행, develop이 그 위에 워크플로 커밋을 얹은 상태.
 - **전 배터리 154 tests green, 기지 실패 0** (음운 111 + alnum 27 + 유틸·통합 16). 신설 스위트: `test_normalize`(통합)·`test_phone_homograph`·`test_alnum_english`.
-- 패키징 파일 완비(pyproject.toml·PYPI.md), PyPI 업로드는 미실행.
+- **배포본 실측 점검 36항목 통과** (파이썬 3.12 임시 환경에서 `pip install kornorm` 후): 공개 API·출력 포맷 3종·`PhonologicProcessor` 상속·규칙 표본 12종·문맥 동형어·heuristics·Stream/Batch 파이프라인·arrow 동봉·cmudict 자가 다운로드. 첫 호출 39.8초(cmudict 다운로드+pecab 재빌드), 이후 즉시.
 
 ## 7. 남은 작업 (우선순위 순)
 
-1. **PyPI 업로드**: TestPyPI 선행 권장. 계정·토큰은 사용자 소관.
-2. **read-only 환경 대응**: 첫 실행 pecab 패치·cmudict 다운로드가 site-packages 쓰기 필요(Docker PermissionError). OS 캐시 리다이렉션안은 기각됨 — 현재는 문서로 한계 명시.
-3. **미착수 기능(초기 기획분)**: 이메일·URL 한국어화, 띄어쓰기 보정, 어미 통일("밥먹어요"→"밥먹으세요").
-4. **관찰된 미세 결함 후보**: "3400mAh"→"삼천사백마"(mAh 단위 미등재), "1연대는"→[일연대는](조사 결합형에서 ㄴ첨가 미발동 — 단독형 "1연대"는 [일련대]로 정상).
-5. **엔진 개선 후보**: 연속 음운변동 시 규칙 롤백/규칙 간 충돌 방지 일반화(현재는 norm29→LUT 셀 연쇄 완결 등 국소 해법).
-6. **확인 대기**: chapter5.py 주석 의심 2곳 — 20항 (2) "핥는지"(규범 원문 할는지?), 다만 "이뷘뇨"([이붠뇨]?). 다만 "상견네" 주석도 미수정(테스트는 [상견녜] 반영됨).
+1. **PYPI.md 보강** (다음 배포 때 반영):
+   - 의존성 안내: `pecab`이 런타임 의존성으로 **pytest·emoji·numpy·regex·pygments를 함께 끌어옴**(pecab 메타데이터 소관, 우리가 못 줄임). 가벼운 환경을 기대하는 사용자에게 미리 고지할 것.
+   - 첫 실행 소요를 실측치로 교체: 현재 "about a minute" → **약 40초**(3.12/네트워크 정상 기준).
+   - 검증 환경 표기: 파이썬 3.10·3.12에서 동작 확인.
+2. **워크플로 액션 버전 상향**: `actions/checkout@v4`→v5, `actions/setup-python@v5`→v6 (Node 20 deprecation 경고. 배포 실패 원인은 아님).
+3. **read-only 환경 대응**: 첫 실행 pecab 패치·cmudict 다운로드가 site-packages 쓰기 필요(Docker PermissionError). OS 캐시 리다이렉션안은 기각됨 — 현재는 문서로 한계 명시.
+4. **미착수 기능(초기 기획분)**: 이메일·URL 한국어화, 띄어쓰기 보정, 어미 통일("밥먹어요"→"밥먹으세요").
+5. **관찰된 미세 결함 후보**: "3400mAh"→"삼천사백마"(mAh 단위 미등재), "1연대는"→[일연대는](조사 결합형에서 ㄴ첨가 미발동 — 단독형 "1연대"는 [일련대]로 정상).
+6. **엔진 개선 후보**: 연속 음운변동 시 규칙 롤백/규칙 간 충돌 방지 일반화(현재는 norm29→LUT 셀 연쇄 완결 등 국소 해법).
+7. **확인 대기**: chapter5.py 주석 의심 2곳 — 20항 (2) "핥는지"(규범 원문 할는지?), 다만 "이뷘뇨"([이붠뇨]?). 다만 "상견네" 주석도 미수정(테스트는 [상견녜] 반영됨).
 
 ## 8. 컨벤션과 작업 관례
 
@@ -93,7 +100,12 @@ venv/bin/python -m unittest test.test_normalize
 - 파일 최상단 `[KorNorm {요약} 모듈]` 주석. 독스트링은 한국어, `Args:`/`Returns:` 형식(타입 괄호, 마침표로 끝). Type hint 필수.
 - 파일 이름 변경은 `mv` (rm 후 재작성 금지). 리서치 산출물은 `temp/` 등에 격리, 커밋 금지.
 
+**브랜치·릴리스 관례**:
+- **이 문서(CLAUDE.md)와 `.dev_phonology/`는 develop 전용** — master에는 올리지 않는다. develop→master 머지는 `git merge --no-commit` 후 `git rm --cached -r .dev_phonology CLAUDE.md`로 인덱스에서 빼고 커밋한다(작업 트리 파일은 유지). master의 `.gitignore`에는 두 경로가 추가돼 있어 **매 머지마다 `.gitignore` 충돌 + CLAUDE.md modify/delete 충돌이 재발**하는 것이 정상이며, 같은 방식으로 다시 해결한다.
+- **릴리스**: `__version__` 상향 → develop 커밋 → master 머지 → `v<version>` annotated 태그 → 태그 푸시 시 Actions가 PyPI 게시. 태그와 `__version__`이 다르면 워크플로가 먼저 실패한다. 게시 실패 시 태그를 지웠다 다시 달 필요 없이 Actions의 **Re-run jobs**로 재시도한다.
+- **PyPI Trusted Publisher 등록값**: 프로젝트 `kornorm` / 소유자 `shhommychon` / 저장소 `KorNorm` / 워크플로 `publish.yml` / 환경 `pypi`. 저장소 Settings의 `pypi` 환경과 Actions 활성화가 전제.
+
 **작업 관례**:
 - **테스트 형식**: 새 `test_phone_normN.py`는 직전 파일 형식을 그대로 복사. diff 부호는 `-`=엔진 실제 출력, `+`=기대값. `[DIFF_LOG]` 블록은 g2pK와의 참고 비교(log_only)라 실패가 아님.
-- **전사 관례**: 장음 무표기, 공백 보존(밭 아래→"바 다래"), ㅖ→ㅔ 채택(계→게, 녜는 유지), 관형격 '의'는 원칙형 유지(그의). 결속 경계는 공백 너머 변동을 전사에 반영(한 일→"한 닐").
+- **전사 관례**: 장음 무표기, 공백 보존(밭 아래→"바 다래"), ㅖ→ㅔ 채택(계→게, 녜는 유지), 관형격 '의'는 원칙형 유지(그의). 결속 경계는 공백 너머 변동을 전사에 반영(한 일→"한 닐"). 규범의 대괄호 표기는 공백을 지우므로 그대로 기댓값에 쓰면 안 된다(낮 한때 → 규범 [나탄때] vs 엔진 "나 탄때"; 무공백 "낮한때"는 격음화로 "나찬때").
 - **테스트 문장 작문 시 회피**: 받침+조사 '의'(연음 ㄹ+ㅢ 전사 불확정), 받침+공백+ㅏㅓㅗㅜㅟ류 시작 실질 형태소(norm15 절음), 2음절 한자어 경음화(norm26 미커버), "결국"류 부사성 맨명사+용언(결속도 게이트 충돌). 평파열음+ㅅ 전사 주의(접시[접씨]).
