@@ -24,7 +24,9 @@ A rule-by-rule implementation of 표준발음법 (the Standard Korean Pronunciat
 | `"compat"` | ㄷㅗㅇㄴㅣㅁㅁㅜㄴ | compatibility jamo, `U+3137 U+3157 U+3147 …` |
 | `"hangul"` | 동님문 | composed syllables, `U+B3D9 U+B2D8 U+BB38` |
 
-`"positional"` keeps onsets and codas distinguishable, which is what a speech model usually wants; `"hangul"` is what a human wants to read. (`normalize` defaults to `"hangul"`, `apply_phonology` to `"positional"`.)
+`"positional"` keeps onsets and codas distinguishable, which is what a speech model usually wants; `"hangul"` is what a human wants to read. (`normalize` defaults to `"hangul"`, `apply_phonology` to `"positional"`.) Note that `"positional"` renders as composed syllables in most fonts, so the first two rows look identical on screen while being entirely different strings.
+
+Anything the analyzer tags as a symbol, a space, a Latin letter, a digit or a hanja is passed through by surface in every format — punctuation survives (`"같이 갈래?"` → `'가치 갈래?'`), and so does text the normalizer left behind (`"MP3 파일 목록"` → `'MP3 파일 몽녹'`). Surfaces that cannot decompose into syllables at all (raw hanja, bare jamo letters — `漢字`, `ㄱㄴㄷ`, `ㅋㅋㅋ`) are re-classed as symbols on the way in, even when the analyzer calls them nouns, so they take the same path.
 
 ### How a sentence flows
 

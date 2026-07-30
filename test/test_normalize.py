@@ -23,6 +23,11 @@ class TestNormalize(unittest.TestCase):
         """단위·소수점 정규화가 음운 변동(경음화·연음)으로 이어지는지 테스트"""
         self.assertEqual(normalize("몸무게가 70.5kg 나갔다"), "몸무게가 칠씹 쩜 오킬로그램 나갇따")
 
+    def test_punctuation_passthrough(self):
+        """문장부호가 남은 문장도 완성형 출력을 끝까지 마치는지 테스트"""
+        self.assertEqual(normalize("같이 갈래?"), "가치 갈래?")
+        self.assertEqual(normalize("안녕, 세상! 잘 지냈어?"), "안녕, 세상! 잘 지내써?")
+
     def test_standalone_zero(self):
         """단독 0이 사라지지 않고 발음까지 이어지는지 테스트"""
         self.assertEqual(normalize("통장 잔액은 0원입니다"), "통장 자내근 영워님니다")

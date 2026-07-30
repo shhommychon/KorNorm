@@ -164,7 +164,7 @@ The four packages each ship their own reference — every function they expose, 
 ## Known limitations (alpha)
 
 - The first-run setup cannot complete in read-only environments (e.g. locked-down Docker images) — make the first call once with write access to `site-packages`.
-- Inputs with unusual punctuation may trip the morphological analyzer; numbers, common symbols, and everything `dealers_choice` handles are safe.
+- Symbols outside the conversion tables (`…`, `½`, emoji) pass through unread, and the unit table — broad as it is — is not exhaustive: a compound unit it cannot match is read as best the later steps can (`3400mAh` → `삼천사백마`).
 - Context-dependent homographs (잠자리 bed/dragonfly, …) are resolved by a cue-word vote, which is an approximation.
 - Not yet implemented: email/URL reading, spacing correction, sentence-ending unification.
 
