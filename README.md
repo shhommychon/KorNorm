@@ -29,7 +29,7 @@ Pure Python (3.10+). The only dependencies are [pecab](https://github.com/hyunwo
 
 **On first use**, KorNorm performs a one-time setup:
 
-- it patches and rebuilds pecab's bundled dictionary (takes about a minute), and
+- it patches and rebuilds pecab's bundled dictionary (takes about 40 seconds), and
 - it downloads the CMU Pronouncing Dictionary (~3.6 MB) for English word conversion. If the download fails (e.g. offline), everything else still works — English words are simply left as spelled-out letters.
 
 Both steps write into `site-packages`, so make the first call in an environment with write access (see [Known limitations](#known-limitations-alpha)).

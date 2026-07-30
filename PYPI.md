@@ -18,11 +18,11 @@ KorNorm turns raw Korean text — digits, units, symbols, English words and all 
 pip install kornorm
 ```
 
-Pure Python (3.10+). The only dependencies are [pecab](https://github.com/hyunwoongko/pecab) and pyarrow — no C toolchain, no MeCab install.
+Pure Python (3.10+, verified on 3.10 and 3.12). The only direct dependencies are [pecab](https://github.com/hyunwoongko/pecab) and pyarrow — no C toolchain, no MeCab install. Note that pecab's own metadata pulls in pytest, emoji, numpy, regex and pygments as transitive dependencies; that is pecab's doing, and KorNorm cannot slim it down — plan for it if you expect a minimal environment.
 
 **On first use**, KorNorm performs a one-time setup:
 
-- it patches and rebuilds pecab's bundled dictionary (takes about a minute), and
+- it patches and rebuilds pecab's bundled dictionary (takes about 40 seconds), and
 - it downloads the CMU Pronouncing Dictionary (~3.6 MB) for English word conversion. If the download fails (e.g. offline), everything else still works — English words are simply left as spelled-out letters.
 
 Both steps write into `site-packages`, so run the first call in an environment with write access (see Known limitations).
