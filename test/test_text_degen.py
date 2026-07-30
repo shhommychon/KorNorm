@@ -1,6 +1,6 @@
 import unittest
 from functools import partial
-from kornorm.heuristics.repetition import fix_text_degeneration
+from kornorm.heuristics.repetition import fix_text_degeneration, find_text_degeneration
 from kornorm.pipeline import StreamPipeline, BatchPipeline
 
 # BatchPipeline(multiprocessing)에서 직렬화가 가능하도록 최상단에 함수를 정의합니다.
@@ -26,6 +26,30 @@ class TestRepetition(unittest.TestCase):
 
         result_multi = fix_text_degeneration("abcde ")
         self.assertEqual(result_multi, "abcde ")
+
+    def test_find_degeneration(self):
+        """반복 조각의 위치·단위·횟수를 텍스트 무변경으로 보고하는지 테스트"""
+        result = find_text_degeneration(self.sample)
+        self.assertEqual(result, [(1, 9, '아', 8)])
+        # 보고된 스팬을 원문에서 잘라내면 반복 조각 그대로여야 함
+        start, end, unit, count = result[0]
+        self.assertEqual(self.sample[start:end], unit * count)
+
+        # 공백 포함 반복 단위 (끝의 부분 반복은 통째 횟수에서 제외됨)
+        result_multi = find_text_degeneration(self.sample_multi, repeat_count=3)
+        self.assertEqual(result_multi, [(0, 23, "아니! ", 5)])
+
+        # 무반복 텍스트와 빈 텍스트는 빈 목록
+        self.assertEqual(find_text_degeneration("정상 문장입니다"), [])
+        self.assertEqual(find_text_degeneration(''), [])
+
+    def test_find_matches_fix(self):
+        """fix가 축약하는 입력과 find가 탐지하는 입력이 일치하는지 테스트"""
+        samples = [self.sample, self.sample_multi, "정상 문장입니다", "하하하하하하", '']
+        for sample in samples:
+            fixed = (fix_text_degeneration(sample) != sample)
+            found = (find_text_degeneration(sample) != [])
+            self.assertEqual(fixed, found, sample)
 
     def test_stream_pipeline_with_partial(self):
         """StreamPipeline에 partial로 파라미터를 수정한 함수를 넣어 테스트"""
