@@ -32,5 +32,11 @@ class TestAlnumPreset(unittest.TestCase):
         expected5 = "비투비 계약으로 사과 백개, 장갑 세켤레를 납품했다."
         self.assertEqual(dealers_choice(text5), expected5)
 
+    def test_dealers_choice_case6(self):
+        # 케이스 6: 의존 명사가 붙지 않은 단독 0의 독법
+        text6 = "오늘 기온은 0도, 강수 확률은 0%입니다."
+        expected6 = "오늘 기온은 영도, 강수 확률은 영퍼센트입니다."
+        self.assertEqual(dealers_choice(text6), expected6)
+
 if __name__ == "__main__":
     unittest.main()

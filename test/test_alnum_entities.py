@@ -20,6 +20,14 @@ class TestEntities(unittest.TestCase):
         self.assertEqual(read_units("10 km"), "10킬로미터")
         self.assertEqual(read_units("5kg"), "5킬로그램")
 
+    def test_read_compound_units(self):
+        """전하량·전력량·퍼센트포인트류 합성 단위를 통째로 치환하는지 테스트"""
+        self.assertEqual(read_units("3400mAh"), "3400밀리암페어시")
+        self.assertEqual(read_units("77kWh"), "77킬로와트시")
+        self.assertEqual(read_units("5%p"), "5퍼센트포인트")
+        # 합성 단위가 구성 요소 단위(ma·kw·%)로 쪼개 읽히지 않아야 함
+        self.assertEqual(read_units("30ma"), "30밀리암페어")
+
     def test_read_alphanum_combos(self):
         """영문과 숫자가 혼합된 토큰을 낱자 발음으로 변환하는지 테스트"""
         self.assertEqual(read_alphanum_combos("H2O"), "에이치투오")

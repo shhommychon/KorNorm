@@ -344,7 +344,7 @@ def norm19_a(tokens: List[MorphToken]) -> List[MorphToken]:
 #     칼날[칼랄]
 #     물난리[물랄리]
 #     줄넘기[줄럼끼]
-#     핥는지[할른지]
+#     할는지[할른지]
 #
 # Ref:
 #   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a413
@@ -354,8 +354,8 @@ def norm20(tokens: List[MorphToken]) -> List[MorphToken]:
 
 # [제20항 붙임 Addendum of Norm 20]
 #
-# 첫소리 ‘ㄴ’이 ‘ㄶ, ㅀ’ 뒤에 연결되는 경우에도 이에 준한다.
-# This also applies when the initial sound ‘ㄴ’ follows ‘ㄶ, ㅀ’.
+# 첫소리 ‘ㄴ’이 ‘ㅀ’, ‘ㄾ’ 뒤에 연결되는 경우에도 이에 준한다.
+# This also applies when the initial sound ‘ㄴ’ follows ‘ㅀ’, ‘ㄾ’.
 #
 #     닳는[달른]
 #     뚫는[뚤른]
@@ -378,10 +378,10 @@ def norm20_a(tokens: List[MorphToken]) -> List[MorphToken]:
 #     결단력[결딴녁]
 #     공권력[공꿘녁]
 #     동원령[동:원녕]
-#     상견례[상견네]
+#     상견례[상견녜]
 #     횡단로[횡단노]
 #     이원론[이:원논]
-#     입원료[이뷘뇨]
+#     입원료[이붠뇨]
 #     구근류[구근뉴]
 #
 # Ref:
@@ -480,7 +480,7 @@ def norm20_p(tokens: List[MorphToken]) -> List[MorphToken]:
 #     꽃길[꼳낄](×[꼭낄])
 #     젖먹이[전머기](×[점머기])
 #     문법[문뻡](×[뭄뻡])
-#     꽃밭[꼳빙](×[꼽빙])
+#     꽃밭[꼳빧](×[꼽빧])
 #
 # Ref:
 #   https://korean.go.kr/kornorms/regltn/regltnView.do?regltn_code=0002&regltn_no=346#a414

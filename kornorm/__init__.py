@@ -1,9 +1,8 @@
 from kornorm.alphanumeric.preset import dealers_choice
 from kornorm.phonology.engine import PhonologicProcessor, apply_phonology
 from kornorm.pipeline import StreamPipeline, BatchPipeline
-from kornorm.preset import normalize
 
-__version__ = "0.0.0a1"
+__version__ = "0.0.0a2"
 
 __all__ = [
     "__version__",
@@ -12,5 +11,4 @@ __all__ = [
     "StreamPipeline",
     "apply_phonology",
     "dealers_choice",
-    "normalize",
 ]
