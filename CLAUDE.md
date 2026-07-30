@@ -12,7 +12,7 @@ Claude Code가 이 저장소에서 작업할 때 읽는 프로젝트 컨텍스�
 ## 2. 자주 쓰는 명령
 
 ```bash
-# 음운 엔진 전체 테스트 (전 배터리 163 tests 중 116개, 전부 green — §6 참조)
+# 음운 엔진 전체 테스트 (전 배터리 171 tests 중 119개, 전부 green — §6 참조)
 venv/bin/python -m unittest discover -s test -p "test_phone*.py"
 
 # 단일 규칙 스위트
@@ -21,8 +21,8 @@ venv/bin/python -m unittest test.test_phone_norm18
 # 정규화(alphanumeric/heuristics) 테스트
 venv/bin/python -m unittest discover -s test -p "test_alnum*.py"
 
-# 통합 엔트리포인트(dealers_choice→음운) 테스트
-venv/bin/python -m unittest test.test_normalize
+# 통합 체인(dealers_choice→음운) 테스트
+venv/bin/python -m unittest test.test_integration
 ```
 
 - 테스트 폴더명은 `test` (`tests` 아님 — 의도적 결정).
@@ -38,8 +38,8 @@ venv/bin/python -m unittest test.test_normalize
   - `homographs.py`: 문맥 의존 동형어 판별 (`CONTEXT_HOMOGRAPHS` 단서 다수결 — 잠자리류).
   - `_resources/`: stdict Arrow 바이너리 (`is_hanja`/`pronunciation`/`compound_structure`).
 - `kornorm/alphanumeric/` — 숫자·단위·통화·영문 정규화. `preset.dealers_choice` 14단계 프리셋. `english.py`(CMU dict → 외래어 표기법 변환), `_fetch_cmudict.py`(첫 실행 자가 다운로드).
-- `kornorm/heuristics/` — 반복 열화 축약(`repetition.py`), 기호 제거(`eraser.py`).
-- `kornorm/pipeline.py` — Stream/Batch 파이프라인 (순수 함수 조립). `kornorm/preset.py` — `normalize`(dealers_choice→apply_phonology 통합 엔트리포인트).
+- `kornorm/heuristics/` — 반복 열화 축약·탐지(`repetition.py`: `fix_`/`find_text_degeneration`), 기호 제거(`eraser.py`: `purge_symbols`/`remove_middle_symbols` 정규식 타깃 혼용, `strip_punctuation`+`collapse_whitespace` 짝, 문장부호 상수 5종).
+- `kornorm/pipeline.py` — Stream/Batch 파이프라인 (순수 함수 조립). 통합 엔트리포인트는 없음 — `normalize`는 이름이 불분명해 0.0.0a2에서 삭제, 사용자가 `apply_phonology(dealers_choice(...))`로 직접 체이닝(§5-18).
 - `kornorm/utils/jamo.py` — U+11xx 위치 기반 자모 상수(`O_*`/`N_*`/`C_*`)·분해·조합. `_patch_pecab.py` — pecab 사전 lazy 패처(`PATCH_REVISION` 마커, 제외·추가·코스트 보정).
 - `test/` — 규칙별 테스트. `test_phone_normN.py`는 직전 파일과 완전 동일 형식(헬퍼 5종 verbatim, 본항/다만/붙임별 words+sentences).
 - `pyproject.toml`·`PYPI.md` — 0.0.0a1 패키징(버전 단일 소스는 `kornorm.__version__`, PyPI readme는 PYPI.md, 저장소 README는 이미지 포함 영문판).
@@ -74,23 +74,24 @@ venv/bin/python -m unittest test.test_normalize
 15. 참고 서브모듈 전체 삭제 + 패키징: pyproject.toml·PYPI.md 신설, 공개 API export(`__version__`·`dealers_choice`·`apply_phonology`·`PhonologicProcessor`·heuristics), README 영문 개편(캐릭터 이미지 활용).
 16. **0.0.0a1 릴리스(2026-07-30)**: LICENSE 0.2.0 개정(AI 생성분 명시), master 머지·`v0.0.0a1` 태그, GitHub Actions 자동 배포 워크플로 신설, PyPI 게시 완료. 설치본 전반 점검 36항목 통과(파이썬 3.12 환경 포함).
 17. 알파 피드백 라운드(2026-07-30): 패키지 4곳에 README 신설 + 메인 README 링크(예시 전수 엔진 실측). 설치본 사용 피드백으로 버그픽스 3건 — ① `normalize` 기본 "hangul" 포맷이 비한글 문자에서 IndexError(출력 포맷터를 S 계열 표면형 통과로 통일 + 오태깅 스크립트(한자 원문·호환 자모 낱자, NNG/UNKNOWN으로 옴)를 토큰화 시점에 S 계열 재태깅해 파이프라인 불변조건 복원), ② `num_to_sino` 단독 0 소실('0'→'영'), ③ `read_interpunct_digits`·`read_special_symbols` 재수출 누락. 회귀 테스트 +9(무작위 혼합 스크립트 300회 스트레스 크래시 0).
+18. 타 프로젝트 피드백 7항목 대응(2026-07-30): **`normalize`·preset.py 삭제**(범위가 불분명한 네이밍이라는 사용자 결정 — 정규화 전용은 `dealers_choice`가 원래 담당, 통합은 사용자 체이닝. `test_normalize`→`test_integration` 개편, README·PYPI.md 예제 재구성). 신규 — `strip_punctuation`+`collapse_whitespace`(별도 함수, 파라미터 아님)와 문장부호 상수 5종, `purge_symbols`/`remove_middle_symbols` 정규식 타깃 혼용(방송 상용구류는 호출측 패턴으로 해결·목록 비수록 결정), `find_text_degeneration`(fix의 조회 전용 짝, fix≠원문 ⇔ find≠[] 동치 보장), `PhonologicProcessor.pos()`+모듈 `pos`(패치 사전·수사 병합·S 재태깅이 반영된 "엔진의 시점", 최상위 비export). 보류 결정 — 마스크 토큰 보호(후일 Stream/BatchPipeline 기능 후보), 수사 역방향 인식(ITN), 진짜 띄어쓰기 교정.
 
 ## 6. 현재 상태 (develop 기준)
 
 - **0.0.0a1이 PyPI에 게시됨** (2026-07-30). `pip install kornorm`으로 설치 가능. master는 태그 `v0.0.0a1`(→ 머지 커밋)까지 진행, develop이 그 위에 워크플로·문서·버그픽스 커밋을 얹은 상태. **주의: PyPI의 0.0.0a1은 `normalize` 기본 포맷("hangul")이 문장부호 하나에도 IndexError로 죽는 채 게시됨**(develop에서 수정 완료 — §7-1).
-- **전 배터리 163 tests green, 기지 실패 0** (음운 116 + alnum 29 + 유틸·통합 18). 신설 스위트: `test_phone_output_format`(문장부호·영숫자·한자·자모 낱자 혼재 출력 3형식 — 36항목 점검과 기존 배터리가 모두 놓친 "테스트 문장에 문장부호가 없다" 구멍을 막는 몫).
+- **전 배터리 171 tests green, 기지 실패 0** (음운 119 + alnum 29 + 유틸·통합 23). 신설 스위트: `test_phone_output_format`(문장부호·영숫자·한자·자모 낱자 혼재 출력 3형식 — 36항목 점검과 기존 배터리가 모두 놓친 "테스트 문장에 문장부호가 없다" 구멍을 막는 몫)·`test_phone_pos`(태그 노출)·`test_integration`(구 test_normalize).
 - **배포본 실측 점검 36항목 통과** (파이썬 3.12 임시 환경에서 `pip install kornorm` 후): 공개 API·출력 포맷 3종·`PhonologicProcessor` 상속·규칙 표본 12종·문맥 동형어·heuristics·Stream/Batch 파이프라인·arrow 동봉·cmudict 자가 다운로드. 첫 호출 39.8초(cmudict 다운로드+pecab 재빌드), 이후 즉시.
 
 ## 7. 남은 작업 (우선순위 순)
 
-1. **0.0.0a2 조기 릴리스**: 게시된 0.0.0a1의 `normalize`가 문장부호 포함 문장 전반에서 크래시하므로(수정은 develop에 반영됨) 픽스 배포를 서두를 것. 아래 PYPI.md 보강·워크플로 버전 상향을 같은 배포에 태우면 왕복이 준다.
+1. **0.0.0a2 조기 릴리스**: 게시된 0.0.0a1의 `normalize`(hangul 포맷)가 문장부호 포함 문장 전반에서 크래시하므로(수정은 develop에 반영됨) 픽스 배포를 서두를 것. **normalize 삭제가 파괴적 변경이므로 릴리스 노트(PYPI.md Changelog에 초안 있음)에 명시.** 아래 PYPI.md 보강·워크플로 버전 상향을 같은 배포에 태우면 왕복이 준다.
 2. **PYPI.md 보강** (다음 배포 때 반영):
    - 의존성 안내: `pecab`이 런타임 의존성으로 **pytest·emoji·numpy·regex·pygments를 함께 끌어옴**(pecab 메타데이터 소관, 우리가 못 줄임). 가벼운 환경을 기대하는 사용자에게 미리 고지할 것.
    - 첫 실행 소요를 실측치로 교체: 현재 "about a minute" → **약 40초**(3.12/네트워크 정상 기준).
    - 검증 환경 표기: 파이썬 3.10·3.12에서 동작 확인.
 3. **워크플로 액션 버전 상향**: `actions/checkout@v4`→v5, `actions/setup-python@v5`→v6 (Node 20 deprecation 경고. 배포 실패 원인은 아님).
 4. **read-only 환경 대응**: 첫 실행 pecab 패치·cmudict 다운로드가 site-packages 쓰기 필요(Docker PermissionError). OS 캐시 리다이렉션안은 기각됨 — 현재는 문서로 한계 명시.
-5. **미착수 기능(초기 기획분)**: 이메일·URL 한국어화, 띄어쓰기 보정, 어미 통일("밥먹어요"→"밥먹으세요").
+5. **미착수 기능(초기 기획분)**: 이메일·URL 한국어화, 띄어쓰기 보정, 어미 통일("밥먹어요"→"밥먹으세요"). 후일 후보 — **마스크·마커 토큰 보호**(원하는 토큰 리스트를 필수 인자로 받아 정규화에서 제외; 넣는다면 Stream/BatchPipeline 클래스 기능으로, §5-18 보류 결정).
 6. **관찰된 미세 결함 후보**: "3400mAh"→"삼천사백마"(단위 미등재가 아니라 **단위 정규식이 뒤따르는 h 때문에 'ma'(밀리암페어) 매치를 포기 → 13단계 영단어가 cmudict의 감탄사 'mah'를 주워 '마'**), "007"→[칠](선행 0 있는 수는 자릿수 독법 대신 낱자 독법 [공공칠]이 자연스러움). "1연대는"→[일련대는]은 재확인 결과 정상 동작이라 목록에서 제거(2026-07-30).
 7. **엔진 개선 후보**: 연속 음운변동 시 규칙 롤백/규칙 간 충돌 방지 일반화(현재는 norm29→LUT 셀 연쇄 완결 등 국소 해법).
 8. **확인 대기**: chapter5.py 주석 의심 2곳 — 20항 (2) "핥는지"(규범 원문 할는지?), 다만 "이뷘뇨"([이붠뇨]?). 다만 "상견네" 주석도 미수정(테스트는 [상견녜] 반영됨).
