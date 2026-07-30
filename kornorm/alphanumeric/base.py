@@ -9,27 +9,37 @@ from kornorm.alphanumeric.constants import (
 
 
 def num_to_sino(
-    num_str: str, 
-    sino_digits: dict = SINO_DIGITS, 
-    sino_tens: list = SINO_TENS, 
-    sino_thousands: list = SINO_THOUSANDS
+    num_str: str,
+    sino_digits: dict = SINO_DIGITS,
+    sino_tens: list = SINO_TENS,
+    sino_thousands: list = SINO_THOUSANDS,
+    zero_char: str = '공'
 ) -> str:
     """
     숫자 문자열을 한자어 기수사(일, 이, 삼...)로 변환합니다.
-    선행 0은 절삭하며, 0으로만 이루어진 수는 '영'으로 읽습니다.
+    선행 0이 붙은 다자리 수는 자릿수 독법이 무의미하므로 낱자로 읽고("007" -> 공공칠),
+    0으로만 이루어진 한 자리 수는 '영'으로 읽습니다.
 
     Ref:
         https://github.com/SMART-TTS/SMART-G2P/blob/master/utils.py#L133-L160
-    
+
     Args:
         num_str (str): 변환할 숫자 문자열.
         sino_digits (dict): 숫자별 한자어 매핑 사전.
         sino_tens (list): 십 단위 한자어 리스트.
         sino_thousands (list): 천 단위 이상의 큰 숫자 한자어 리스트.
-        
+        zero_char (str): 낱자 독법에서 0을 읽을 글자 (기본값 '공').
+
     Returns:
         str: 한자어 수사로 변환된 문자열.
     """
+    # 선행 0이 붙은 다자리 수(코드·번호류)는 낱자 독법으로 읽는다
+    if len(num_str) > 1 and num_str[0] == '0':
+        return "".join(
+            zero_char if char == '0' else sino_digits.get(char, char)
+            for char in num_str
+        )
+
     length = len(num_str)
     res = []
 
@@ -49,8 +59,7 @@ def num_to_sino(
         if tens == 0 and chunk > 0:
             res.append(sino_thousands[chunk])
 
-    # '0'만으로 이루어진 수는 자릿수 이름이 하나도 쌓이지 않으므로 영으로 읽는다
-    # (선행 0은 그대로 절삭한다. 예: "007" -> 칠).
+    # 단독 '0'은 자릿수 이름이 하나도 쌓이지 않으므로 영으로 읽는다
     if num_str and not res:
         return sino_digits.get('0', '영')
 

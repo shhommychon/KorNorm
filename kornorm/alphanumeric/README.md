@@ -39,7 +39,7 @@ The order is load-bearing in two places. Units run **before** the decimal point 
 
 | Function | Does | Example |
 |---|---|---|
-| `num_to_sino(num_str)` | digits → Sino-Korean cardinal; leading zeros drop out, and a string of nothing but zeros reads 영 | `"1950"` → `'천구백오십'`, `'0'` → `'영'`, `"007"` → `'칠'` |
+| `num_to_sino(num_str)` | digits → Sino-Korean cardinal; a bare `0` reads 영, and a multi-digit number with a leading zero is a code, read digit by digit | `"1950"` → `'천구백오십'`, `'0'` → `'영'`, `"007"` → `'공공칠'` |
 | `num_to_native(num_str)` | digits → native Korean numeral, mixing in Sino above 100 (with the 스물 → 스무 exception) | `"21"` → `'스물한'`, `"108"` → `'백여덟'` |
 | `alphabet_to_hangul(char)` | one Latin letter → its Korean letter name; anything else passes through | `'q'` → `'큐'`, `'Z'` → `'즤'` |
 
@@ -108,7 +108,7 @@ All the maps and compiled patterns live in one module, and nearly every function
 | `NATIVE_DIGITS` / `NATIVE_TENS` | 9 / 9 | `num_to_native` |
 | `LATIN_MAP` | 26 | `alphabet_to_hangul` |
 | `ENG_DIGITS` | 10 | `read_alphanum_combos` |
-| `UNITS_MAP` | 221 | `read_units` |
+| `UNITS_MAP` | 228 | `read_units` |
 | `CURRENCY_MAP` | 53 | `read_currencies` |
 | `GREEK_MAP` | 48 | `read_special_symbols` |
 | `SPECIAL_SYMBOL_MAP` / `SYMBOL_MAP` | 9 / 8 | `read_special_symbols`, `read_unit_exceptions` |

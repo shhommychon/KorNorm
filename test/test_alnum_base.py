@@ -8,10 +8,12 @@ class TestBase(unittest.TestCase):
         self.assertEqual(num_to_sino("10"), '십')
 
     def test_num_to_sino_zero(self):
-        """0으로만 이루어진 수를 영으로 읽는지 테스트"""
+        """단독 0은 영으로, 선행 0이 붙은 다자리 수는 낱자로 읽는지 테스트"""
         self.assertEqual(num_to_sino('0'), '영')
-        self.assertEqual(num_to_sino("00"), '영')
-        self.assertEqual(num_to_sino("007"), '칠')
+        self.assertEqual(num_to_sino("00"), "공공")
+        self.assertEqual(num_to_sino("007"), "공공칠")
+        self.assertEqual(num_to_sino("02"), "공이")
+        self.assertEqual(num_to_sino("007", zero_char='영'), "영영칠")
 
     def test_num_to_native(self):
         """숫자를 고유어 수사로 변환하는지 테스트"""

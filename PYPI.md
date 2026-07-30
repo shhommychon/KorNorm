@@ -54,13 +54,13 @@ What sets the G2P apart from existing libraries in the g2pK lineage:
 ## Known limitations (alpha)
 
 - The first-run setup cannot complete in read-only environments (e.g. locked-down Docker images) — trigger the first call once with write access to `site-packages`.
-- Symbols outside the conversion tables (`…`, `½`, emoji) pass through unread, and the unit table — broad as it is — is not exhaustive: a compound unit it cannot match is read as best the later steps can (`3400mAh` → `삼천사백마`).
+- Symbols outside the conversion tables (`…`, `½`, emoji) pass through unread, and the unit table — broad as it is — is not exhaustive: a compound unit it cannot match is read as best the later steps can (`120km/h` → `백이십킬로미터슬래쉬에이치`).
 - Context-dependent homographs (잠자리 bed/dragonfly …) are resolved by a cue-word vote, which is an approximation.
 - Not yet implemented: email/URL reading, spacing correction, sentence-ending unification.
 
 ## Changelog
 
-- **0.0.0a2** — removed the `normalize` wrapper: compose the two layers yourself (`apply_phonology(dealers_choice(text), output_format="hangul")`). Fixed `output_format="hangul"` crashing on any non-hangul character (punctuation included) and bare `0` disappearing from numbers. Added `pos()` (morphological tags as the engine sees them), `strip_punctuation`/`collapse_whitespace`, `find_text_degeneration`, and regex targets for the symbol removers.
+- **0.0.0a2** — removed the `normalize` wrapper: compose the two layers yourself (`apply_phonology(dealers_choice(text), output_format="hangul")`). Fixed `output_format="hangul"` crashing on any non-hangul character (punctuation included) and bare `0` disappearing from numbers; numbers with a leading zero now read as codes (`007` → 공공칠). Added `pos()` (morphological tags as the engine sees them), `strip_punctuation`/`collapse_whitespace`, `find_text_degeneration`, regex targets for the symbol removers, and charge/energy compound units (`mAh`, `kWh`, `%p`, …).
 - **0.0.0a1** — first release.
 
 ## Credits

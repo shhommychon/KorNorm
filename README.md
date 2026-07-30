@@ -173,7 +173,7 @@ The four packages each ship their own reference — every function they expose, 
 ## Known limitations (alpha)
 
 - The first-run setup cannot complete in read-only environments (e.g. locked-down Docker images) — make the first call once with write access to `site-packages`.
-- Symbols outside the conversion tables (`…`, `½`, emoji) pass through unread, and the unit table — broad as it is — is not exhaustive: a compound unit it cannot match is read as best the later steps can (`3400mAh` → `삼천사백마`).
+- Symbols outside the conversion tables (`…`, `½`, emoji) pass through unread, and the unit table — broad as it is — is not exhaustive: a compound unit it cannot match is read as best the later steps can (`120km/h` → `백이십킬로미터슬래쉬에이치`).
 - Context-dependent homographs (잠자리 bed/dragonfly, …) are resolved by a cue-word vote, which is an approximation.
 - Not yet implemented: email/URL reading, spacing correction, sentence-ending unification.
 
