@@ -122,8 +122,6 @@ processor("독립문", output_format="hangul")  # '동님문'
 
 ### Pipelines — corpus-scale processing
 
-<img src=".assets/image/kornorm_fullbody_tall.png" alt="StreamPipeline" align="right" width="200">
-
 Both pipelines take any `str` → `str` function. Define your recipe once, at module top level (that keeps it picklable for multiprocessing):
 
 ```python
@@ -132,6 +130,8 @@ from kornorm import dealers_choice, apply_phonology
 def preprocess(line: str) -> str:
     return apply_phonology(dealers_choice(line), output_format="hangul")
 ```
+
+<img src=".assets/image/kornorm_fullbody_tall.png" alt="StreamPipeline" align="right" width="200">
 
 **`StreamPipeline`** sweeps through your corpus one line at a time — a lazy generator with minimal memory footprint, for when the file is bigger than your RAM:
 
