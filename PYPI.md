@@ -5,10 +5,10 @@ Korean text preprocessing — text normalization plus a G2P engine built on the 
 KorNorm turns raw Korean text — digits, units, symbols, English words and all — into hangul that reads the way a Korean speaker would actually say it out loud. It was built with TTS front-ends in mind, but it is just as much at home normalizing ASR transcripts, building pronunciation dictionaries, or anywhere else Korean text needs to match speech.
 
 ```pycon
->>> from kornorm import normalize
->>> normalize("6·25 전쟁은 1950년에 일어났다")
+>>> from kornorm import dealers_choice, apply_phonology
+>>> apply_phonology(dealers_choice("6·25 전쟁은 1950년에 일어났다"), output_format="hangul")
 '유기오 전쟁은 천구배고심녀네 이러낟따'
->>> normalize("이 old school 감성의 MP3 파일은 3.5MB밖에 안 한다")
+>>> apply_phonology(dealers_choice("이 old school 감성의 MP3 파일은 3.5MB밖에 안 한다"), output_format="hangul")
 '이 올드 스쿨 감성의 엠피쓰리 파이른 삼 쩜 오메가바이트바께 안 한다'
 ```
 
@@ -29,16 +29,7 @@ Both steps write into `site-packages`, so run the first call in an environment w
 
 ## Usage
 
-One call does everything — normalization first, then pronunciation:
-
-```python
-from kornorm import normalize
-
-normalize("몸무게가 70.5kg 나간다")
-# '몸무게가 칠씹 쩜 오킬로그램 나간다'
-```
-
-Or use the two layers separately:
+Two layers, used separately or chained:
 
 ```pycon
 >>> from kornorm import dealers_choice, apply_phonology
@@ -46,6 +37,8 @@ Or use the two layers separately:
 '사만오천원짜리 파이브쥐 요금제'
 >>> apply_phonology("맑게 갠 하늘과 꽃잎", output_format="hangul")  # G2P only
 '말께 갠 하늘과 꼰닙'
+>>> apply_phonology(dealers_choice("몸무게가 70.5kg 나간다"), output_format="hangul")
+'몸무게가 칠씹 쩜 오킬로그램 나간다'
 ```
 
 - **`dealers_choice`** — a 14-step normalization preset: numbers, currencies, phone numbers, dates & times, interpunct readings (6·25), units, decimals, alphanumeric combos (MP3), English words (via CMU dict + 외래어 표기법), leftover Latin letters.
@@ -61,9 +54,14 @@ What sets the G2P apart from existing libraries in the g2pK lineage:
 ## Known limitations (alpha)
 
 - The first-run setup cannot complete in read-only environments (e.g. locked-down Docker images) — trigger the first call once with write access to `site-packages`.
-- Inputs with unusual punctuation may trip the morphological analyzer; numbers, common symbols, and the punctuation handled by `dealers_choice` are safe.
+- Symbols outside the conversion tables (`…`, `½`, emoji) pass through unread, and the unit table — broad as it is — is not exhaustive: a compound unit it cannot match is read as best the later steps can (`3400mAh` → `삼천사백마`).
 - Context-dependent homographs (잠자리 bed/dragonfly …) are resolved by a cue-word vote, which is an approximation.
 - Not yet implemented: email/URL reading, spacing correction, sentence-ending unification.
+
+## Changelog
+
+- **0.0.0a2** — removed the `normalize` wrapper: compose the two layers yourself (`apply_phonology(dealers_choice(text), output_format="hangul")`). Fixed `output_format="hangul"` crashing on any non-hangul character (punctuation included) and bare `0` disappearing from numbers. Added `pos()` (morphological tags as the engine sees them), `strip_punctuation`/`collapse_whitespace`, `find_text_degeneration`, and regex targets for the symbol removers.
+- **0.0.0a1** — first release.
 
 ## Credits
 
