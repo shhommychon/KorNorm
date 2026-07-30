@@ -39,7 +39,7 @@ The order is load-bearing in two places. Units run **before** the decimal point 
 
 | Function | Does | Example |
 |---|---|---|
-| `num_to_sino(num_str)` | digits → Sino-Korean cardinal | `"1950"` → `'천구백오십'` |
+| `num_to_sino(num_str)` | digits → Sino-Korean cardinal; leading zeros drop out, and a string of nothing but zeros reads 영 | `"1950"` → `'천구백오십'`, `'0'` → `'영'`, `"007"` → `'칠'` |
 | `num_to_native(num_str)` | digits → native Korean numeral, mixing in Sino above 100 (with the 스물 → 스무 exception) | `"21"` → `'스물한'`, `"108"` → `'백여덟'` |
 | `alphabet_to_hangul(char)` | one Latin letter → its Korean letter name; anything else passes through | `'q'` → `'큐'`, `'Z'` → `'즤'` |
 

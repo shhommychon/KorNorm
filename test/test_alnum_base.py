@@ -7,6 +7,12 @@ class TestBase(unittest.TestCase):
         self.assertEqual(num_to_sino("1234"), "천이백삼십사")
         self.assertEqual(num_to_sino("10"), '십')
 
+    def test_num_to_sino_zero(self):
+        """0으로만 이루어진 수를 영으로 읽는지 테스트"""
+        self.assertEqual(num_to_sino('0'), '영')
+        self.assertEqual(num_to_sino("00"), '영')
+        self.assertEqual(num_to_sino("007"), '칠')
+
     def test_num_to_native(self):
         """숫자를 고유어 수사로 변환하는지 테스트"""
         self.assertEqual(num_to_native('3'), '세')

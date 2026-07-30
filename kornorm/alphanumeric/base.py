@@ -16,6 +16,7 @@ def num_to_sino(
 ) -> str:
     """
     숫자 문자열을 한자어 기수사(일, 이, 삼...)로 변환합니다.
+    선행 0은 절삭하며, 0으로만 이루어진 수는 '영'으로 읽습니다.
 
     Ref:
         https://github.com/SMART-TTS/SMART-G2P/blob/master/utils.py#L133-L160
@@ -29,14 +30,10 @@ def num_to_sino(
     Returns:
         str: 한자어 수사로 변환된 문자열.
     """
-    # clean_num = num_str.lstrip('0')
-    # if not clean_num:
-    #     return sino_digits.get('0', '영')
-        
-    length = len(num_str) # clean_num)
+    length = len(num_str)
     res = []
-    
-    for i, char in enumerate(num_str): # clean_num):
+
+    for i, char in enumerate(num_str):
         if char == '0':
             continue
             
@@ -51,7 +48,12 @@ def num_to_sino(
         res.append(name + sino_tens[tens])
         if tens == 0 and chunk > 0:
             res.append(sino_thousands[chunk])
-            
+
+    # '0'만으로 이루어진 수는 자릿수 이름이 하나도 쌓이지 않으므로 영으로 읽는다
+    # (선행 0은 그대로 절삭한다. 예: "007" -> 칠).
+    if num_str and not res:
+        return sino_digits.get('0', '영')
+
     return "".join(res)
 
 def num_to_native(
