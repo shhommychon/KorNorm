@@ -117,5 +117,5 @@ All the maps and compiled patterns live in one module, and nearly every function
 ### Notes
 
 - `dealers_choice` produces normalized **hangul text**, not pronunciation. Feed it to [`apply_phonology`](../phonology/README.md) — or just call `normalize`, which is exactly the two chained.
-- Package-level imports cover most of the module (`from kornorm.alphanumeric import read_units`); `read_interpunct_digits` and `read_special_symbols` are currently reachable only from their own submodules.
+- Every function above is importable from the package itself (`from kornorm.alphanumeric import read_units`), and the submodule paths work too.
 - Sources for the individual conversion tables and regexes are credited per-function in the docstrings, and collected in the main README.
