@@ -6,13 +6,13 @@ Claude Code가 이 저장소에서 작업할 때 읽는 프로젝트 컨텍스�
 
 - **KorNorm(고놈)**: 한국어 TTS 전처리 라이브러리 — 텍스트 정규화(숫자·단위·기호·영문) + 표준발음법 기반 G2P(음운 변동) 엔진.
 - 사용자가 2022~2023년 AI 음성합성 스타트업에서 만들었던 사내 도구(`myxi-text-preprocess`/`myxi-text-g2pX`)의 **클린룸 재설계**. 공개 코드(g2pK 계열 4종, TTS 클리너 16종+, pecab, python-jamo 등)를 참고하되 구조적으로 독립된 구현을 만든다. 참고용 서브모듈들은 조사 완료 후 전부 삭제됨(출처 목록은 README Credits 참조).
-- 외부 의존성은 순수 파이썬 `pecab`+`pyarrow`뿐 (C-MeCab 배제). 어휘 지식은 표준국어대사전(stdict)을 Arrow/DAT로 컴파일해 O(1) 조회. 영단어 발음용 cmudict는 첫 실행 시 자가 다운로드(nltk 불사용).
+- 외부 의존성은 순수 파이썬 `pecab`+`pyarrow`뿐 (C-MeCab 배제). 어휘 지식은 표준국어대사전(stdict)을 Arrow/DAT로 컴파일해 O(1) 조회. 영단어 발음용 cmudict는 첫 실행 시 자가 다운로드(nltk 불사용). 선택 의존성은 일본어 한자 독음용 `janome`(순수 파이썬·Apache-2.0, extras `kornorm[ja]`/`[all]`)뿐.
 - g2pK 대비 차별점: ① idioms.txt식 하드코딩 예외 목록 대신 **stdict 발음 선적용 패스**, ② 전역 스위치 대신 **규칙별 공백(어절 경계) 정책** + **어절 결속도**(POS 쌍 기반, 18항 붙임·29항 붙임2), ③ 형태소 태그 기반 형식/실질 형태소 구분(낮 한때[나탄때] 등 g2pK 레거시 버그 해결).
 
 ## 2. 자주 쓰는 명령
 
 ```bash
-# 음운 엔진 전체 테스트 (전 배터리 184 tests 중 119개, 전부 green — §6 참조)
+# 음운 엔진 전체 테스트 (전 배터리 194 tests 중 119개, 전부 green — §6 참조)
 venv/bin/python -m unittest discover -s test -p "test_phone*.py"
 
 # 단일 규칙 스위트
@@ -39,10 +39,11 @@ venv/bin/python -m unittest test.test_integration
   - `_resources/`: stdict Arrow 바이너리 (`is_hanja`/`pronunciation`/`compound_structure`).
 - `kornorm/alphanumeric/` — 숫자·단위·통화·영문 정규화. `preset.dealers_choice` 14단계 프리셋. `english.py`(CMU dict → 외래어 표기법 변환), `_fetch_cmudict.py`(첫 실행 자가 다운로드). 컨버터 1:1 미러 `find_*` 9종(조회 전용, (시작,끝,표면) 튜플, read↔find 동치 계약 — 패턴 즉석 조립 컨버터 3종은 `_iter_*_patterns` 공용 헬퍼로 단일 소스화).
 - `kornorm/heuristics/` — 반복 열화 축약·탐지(`repetition.py`: `fix_`/`find_text_degeneration`), 기호 제거(`eraser.py`: `purge_symbols`/`remove_middle_symbols`/`find_symbols` 정규식 타깃 혼용, `strip_punctuation`+`collapse_whitespace` 짝(후자는 purge_symbols 기반), 문장부호 상수 5종).
+- `kornorm/asia/` — 인접 언어 스크립트 → 한글 독법. `japanese.py`: `read_japanese` — 가나는 외래어 표기법 표4+제6절 세칙 직변환(어두/어중 2벌 테이블, 촉음 ㅅ·ン ㄴ 받침, 장모음 축약, 어두 판정은 스팬 시작 1회), 한자 독음·조사 발음(は→와)은 janome phonetic 필드(선택 의존성). 한자 단독 구간은 기본 통과(`convert_lone_kanji`로 강제). 폴백(janome 무)은 가나만 변환+경고 1회, 々는 폴백에서만 직전 한자 전개. dealers_choice 비편입(단독 함수). finder 짝 없음(정규식으로 충분 기준).
 - `kornorm/pipeline.py` — Stream/Batch 파이프라인 (순수 함수 조립). 통합 엔트리포인트는 없음 — `normalize`는 이름이 불분명해 0.0.0a2에서 삭제, 사용자가 `apply_phonology(dealers_choice(...))`로 직접 체이닝(§5-18).
 - `kornorm/utils/jamo.py` — U+11xx 위치 기반 자모 상수(`O_*`/`N_*`/`C_*`)·분해·조합. `_patch_pecab.py` — pecab 사전 lazy 패처(`PATCH_REVISION` 마커, 제외·추가·코스트 보정).
 - `test/` — 규칙별 테스트. `test_phone_normN.py`는 직전 파일과 완전 동일 형식(헬퍼 5종 verbatim, 본항/다만/붙임별 words+sentences).
-- `pyproject.toml`·`PYPI.md` — 0.0.0a1 패키징(버전 단일 소스는 `kornorm.__version__`, PyPI readme는 PYPI.md, 저장소 README는 이미지 포함 영문판).
+- `pyproject.toml`·`PYPI.md` — 0.0.0a1 패키징(버전 단일 소스는 `kornorm.__version__`, PyPI readme는 PYPI.md, 저장소 README는 이미지 포함 영문판). 선택 의존성 extras `ja`/`all`(janome — all은 향후 extras 누적용).
 - `.github/workflows/publish.yml` — `v*` 태그 푸시 시 PyPI 자동 게시(Trusted Publisher OIDC, 토큰 미보관). 태그와 `__version__` 불일치 시 빌드 전 실패.
 - `.dev_phonology/` — stdict Arrow 빌더(`build_stdict_arrow.py`, -f로 추적)·LUT 빌더·pecab 사전 분석 노트북 (디렉토리 자체는 gitignore).
 
@@ -77,23 +78,26 @@ venv/bin/python -m unittest test.test_integration
 18. 타 프로젝트 피드백 7항목 대응(2026-07-30): **`normalize`·preset.py 삭제**(범위가 불분명한 네이밍이라는 사용자 결정 — 정규화 전용은 `dealers_choice`가 원래 담당, 통합은 사용자 체이닝. `test_normalize`→`test_integration` 개편, README·PYPI.md 예제 재구성). 신규 — `strip_punctuation`+`collapse_whitespace`(별도 함수, 파라미터 아님)와 문장부호 상수 5종, `purge_symbols`/`remove_middle_symbols` 정규식 타깃 혼용(방송 상용구류는 호출측 패턴으로 해결·목록 비수록 결정), `find_text_degeneration`(fix의 조회 전용 짝, fix≠원문 ⇔ find≠[] 동치 보장), `PhonologicProcessor.pos()`+모듈 `pos`(패치 사전·수사 병합·S 재태깅이 반영된 "엔진의 시점", 최상위 비export). 보류 결정 — 마스크 토큰 보호(후일 Stream/BatchPipeline 기능 후보), 수사 역방향 인식(ITN), 진짜 띄어쓰기 교정.
 19. 알려진 결함 소탕 라운드(2026-07-30, 릴리스 전 정지 작업): ① `UNITS_MAP`에 전하량·전력량·비율 합성 단위 7종 추가(ah/mah/wh/kwh/mwh/gwh/%p — 221→228키; "3400mAh"→삼천사백밀리암페어시, "3.5%p"→삼 쩜 오퍼센트포인트), ② `num_to_sino` 선행 0 절삭 시맨틱 제거(lstrip 잔재 유래, 사용자 결정) — 선행 0 다자리 수는 낱자 독법("007"→공공칠, `zero_char='공'` 주입; `num_to_native`는 int() 경유라 bound 경로 무영향 확인), ③ chapter5.py 규범 인용 오타 5곳 정정(korean_go_kr.txt 전문 대조 — 핥는지→할는지, 상견네→상견녜, 이뷘뇨→이붠뇨 + 전수 대조로 추가 발견한 20항 붙임 'ㄶ, ㅀ'→'ㅀ, ㄾ'·21항 꼳빙/꼽빙→꼳빧/꼽빧), ④ publish.yml 액션 상향(checkout@v5·setup-python@v6), PYPI.md 보강(pecab 전이 의존성 고지·첫 실행 40초·검증 3.10/3.12).
 20. finder 확장 라운드(2026-07-31, 0.0.1b1 준비): fix/find 페어링을 라이브러리 전반으로 일반화 — "정규화 전 코퍼스 프로파일링" 계층. ① `find_symbols`(eraser, purge↔find 동치) + `collapse_whitespace`를 purge_symbols 기반으로 re-base(동작 무변경, 사용자 정정), ② alphanumeric `find_*` 9종(컨버터 1:1 미러 — currencies·unit_exceptions·units·special_symbols·phone_number·date_format·time_format·interpunct_digits·bound_numerals; (시작,끝,표면) 끝-오프셋 튜플·독법 미포함은 사용자 결정, 단독 실행 미러라 "3.5GHz"→"5GHz" 스팬). 패턴 즉석 조립 컨버터 3종은 `_iter_*_patterns` 헬퍼로 추출해 read/find 단일 소스화, 맵 순회형은 선점 스팬 겹침 스킵(`_claim_matches`)으로 순차 sub와 등가. 제외 결정 — 소수점·단독 숫자·약어·alphanum_combo("일반 정규식으로 충분"), find_text_degeneration 길이 방식 전환(게시된 API의 조용한 파괴적 변경이라 기각). 테스트 +12(사용자 지시로 finder 스위트만 실측 — 17 green).
+21. 0.0.1b2 준비 라운드(2026-07-31~): ① `read_phone_number` 선행 공백 보존 픽스 — RE_PHONE이 선행 구분자로 소비한 공백을 `_repl`이 삼키던 버그(사용자 실사용 보고), 공백은 구분 기호가 아니라 어절 경계라 재방출(`find_phone_number` lstrip과 대칭, fix/0.0.1b1 `2b5d9c8`). ② `kornorm/asia` 패키지 신설(§3) — `read_japanese`. ARPABET 우회안 대신 표4 직변환 채택(가나는 표음문자), 한자 독음은 janome 선택 의존성(사용자 결정: extras `ja`+`all` 신설, 배치는 새 패키지 asia, dealers_choice 비편입). 폴백 경고에 열화 요약+extras 안내, 々 전개는 폴백 한정(janome 등재어 조회 보호) — 둘 다 사용자 지정 디테일. 테스트 +10(phone 회귀 1 + japanese 9, 신규·수정 스위트만 실측 28 green). 버전업·PYPI.md Changelog는 b2 릴리스 시점으로 보류(사용자 지시).
 
 ## 6. 현재 상태 (develop 기준)
 
-- **0.0.0a2 릴리스 완료** (2026-07-30): master 머지 커밋 `0ff7fa2`에 태그 `v0.0.0a2`가 달려 origin에 푸시됨(Actions 경유 PyPI 게시). 크래시 수정·normalize 삭제(파괴적 변경 고지 포함)가 모두 담긴 버전. develop은 그 위에 finder 확장 라운드(§5-20)를 얹은 상태 — 0.0.1b1 후보.
-- **전 배터리 184 tests, 기지 실패 0** (음운 119 + alnum 40 + 유틸·통합 25). finder 라운드에서는 사용자 지시로 `test_eraser`·`test_alnum_finders`만 실측(17 green — 동치 계약이 컨버터 리팩토링 무회귀 검증 겸함); 나머지 스위트는 0.0.1b1 릴리스 전 일괄 1회 실행 권장. 신설 스위트: `test_alnum_finders`(9종+동치 루프)·`test_phone_output_format`·`test_phone_pos`·`test_integration`.
+- **0.0.1b1 태그 생성 완료(미푸시)**: master 머지 커밋 `8cdd679`(07-31 15:00)에 `v0.0.1b1` annotated 태그 — 사용자 푸시 신호 대기(`git push origin master develop` → `git push origin v0.0.1b1`, 태그 푸시가 Actions PyPI 게시 트리거). 태그 직전 전 배터리 184 green 실측 완료. 직전 릴리스 `v0.0.0a2`는 `0ff7fa2`에 태그·게시 완료.
+- develop은 그 위에 0.0.1b2 준비분(§5-21)을 적재 중 — phone 픽스는 fix/0.0.1b1 경유 머지 완료(`3fb738d`), 일본어 변환은 feature/japanese에서 작업.
+- **전 배터리 194 tests, 기지 실패 0** (음운 119 + alnum 41 + 유틸·통합 25 + asia 9). b2 라운드는 신규·수정 스위트만 실측(test_asia_japanese 9 + test_alnum_context_nums·test_alnum_finders 19 green); 전 배터리 일괄 1회는 b2 릴리스 직전 권장. 신설 스위트: `test_asia_japanese`(janome skipUnless 가드 + 폴백 몽키패치).
 - **배포본 실측 점검 36항목 통과** (파이썬 3.12 임시 환경에서 `pip install kornorm` 후): 공개 API·출력 포맷 3종·`PhonologicProcessor` 상속·규칙 표본 12종·문맥 동형어·heuristics·Stream/Batch 파이프라인·arrow 동봉·cmudict 자가 다운로드. 첫 호출 39.8초(cmudict 다운로드+pecab 재빌드), 이후 즉시.
 
 ## 7. 남은 작업 (우선순위 순)
 
-1. **0.0.1b1 릴리스**: finder 확장(§5-20)과 `__version__` 상향까지 develop에 반영됨. 남은 절차 = 전 배터리 1회 실행(finder 라운드는 부분 검증만 했음) → master 머지 → 태그(§8 릴리스 관례). PYPI.md Changelog 0.0.1b1 항목은 작성 완료.
-2. **read-only 환경 대응**: 첫 실행 pecab 패치·cmudict 다운로드가 site-packages 쓰기 필요(Docker PermissionError). OS 캐시 리다이렉션안은 기각됨 — 현재는 문서로 한계 명시.
-3. **미착수 기능(초기 기획분)**: 이메일·URL 한국어화, 띄어쓰기 보정, 어미 통일("밥먹어요"→"밥먹으세요"). 후일 후보 — **마스크·마커 토큰 보호**(원하는 토큰 리스트를 필수 인자로 받아 정규화에서 제외; 넣는다면 Stream/BatchPipeline 클래스 기능으로, §5-18 보류 결정), `read_english_words`의 find_ 짝(CMU 등재어 탐지 — finder 라운드 스코프 외로 미룸).
-4. **대형 피쳐 아이디어 (지금 단계 아님 — 기록만, 사용자 지시 2026-07-30)**:
-   - **말투 전체 보정**: 문장 전체를 지정 문체로 노멀라이징 — "합니다/입니다"체, "하다/이다"체, 또는 커스텀 말투(예: "하다냥/이다냥"). 위 3의 어미 통일 기획을 일반화한 것.
+1. **0.0.1b1 푸시**: 태그까지 완료(§6) — 사용자 신호 시 푸시 후 Actions 게시 확인(이번이 checkout@v5·setup-python@v6 상향의 첫 실전). 게시 실패 시 재태그 없이 Re-run jobs.
+2. **0.0.1b2 릴리스**: §5-21 적재분(phone 픽스+일본어 변환) — `__version__` 상향, PYPI.md Changelog(phone 픽스·`read_japanese`·extras 고지 포함) 작성, 전 배터리 1회 후 관례대로 머지·태그.
+3. **read-only 환경 대응**: 첫 실행 pecab 패치·cmudict 다운로드가 site-packages 쓰기 필요(Docker PermissionError). OS 캐시 리다이렉션안은 기각됨 — 현재는 문서로 한계 명시.
+4. **미착수 기능(초기 기획분)**: 이메일·URL 한국어화, 띄어쓰기 보정, 어미 통일("밥먹어요"→"밥먹으세요"). 후일 후보 — **마스크·마커 토큰 보호**(원하는 토큰 리스트를 필수 인자로 받아 정규화에서 제외; 넣는다면 Stream/BatchPipeline 클래스 기능으로, §5-18 보류 결정), `read_english_words`의 find_ 짝(CMU 등재어 탐지 — finder 라운드 스코프 외로 미룸).
+5. **대형 피쳐 아이디어 (지금 단계 아님 — 기록만, 사용자 지시 2026-07-30)**:
+   - **말투 전체 보정**: 문장 전체를 지정 문체로 노멀라이징 — "합니다/입니다"체, "하다/이다"체, 또는 커스텀 말투(예: "하다냥/이다냥"). 위 4의 어미 통일 기획을 일반화한 것.
    - **난독화 한글 복원**: 받침을 일정하게 바꾸거나 발음 나는 소리를 과장해 우스꽝스럽게 적어 난독화한 한국어(외국 호텔 리뷰류)를 원문으로 복원하는 알고리즘.
-5. **관찰된 미세 결함 후보**: "30Nm"(토크)→[삼십나노미터](대소문자 무시 매칭이라 nm/Nm 동형 충돌 — 구조적 한계), "120km/h"→[백이십킬로미터슬래쉬에이치](분수형 합성 단위 일부만 등재).
-6. **엔진 개선 후보**: 연속 음운변동 시 규칙 롤백/규칙 간 충돌 방지 일반화(현재는 norm29→LUT 셀 연쇄 완결 등 국소 해법).
+6. **관찰된 미세 결함 후보**: "30Nm"(토크)→[삼십나노미터](대소문자 무시 매칭이라 nm/Nm 동형 충돌 — 구조적 한계), "120km/h"→[백이십킬로미터슬래쉬에이치](분수형 합성 단위 일부만 등재).
+7. **엔진 개선 후보**: 연속 음운변동 시 규칙 롤백/규칙 간 충돌 방지 일반화(현재는 norm29→LUT 셀 연쇄 완결 등 국소 해법).
 
 ## 8. 컨벤션과 작업 관례
 

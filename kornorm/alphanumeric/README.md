@@ -2,7 +2,7 @@
 
 Everything in a Korean sentence that is not hangul yet: digits, units, currencies, symbols, abbreviations and English words. Every conversion is a standalone pure function (`str` → `str`) that can be used on its own, and `dealers_choice` is the house preset that runs them in an order that works. Nine converters also have read-only `find_` twins that report matches without rewriting anything ([Finders](#finders--detect-without-touching)).
 
-> [← back to the main README](../../README.md) · siblings: [`phonology`](../phonology/README.md) · [`heuristics`](../heuristics/README.md) · [`utils`](../utils/README.md)
+> [← back to the main README](../../README.md) · siblings: [`phonology`](../phonology/README.md) · [`heuristics`](../heuristics/README.md) · [`asia`](../asia/README.md) · [`utils`](../utils/README.md)
 
 ### The preset — `dealers_choice`
 

@@ -2,7 +2,7 @@
 
 Two low-level pieces the rest of the library stands on: a jamo layer that refuses to confuse an onset with a coda, and a one-time patch that teaches pecab's dictionary to split the compounds a pronunciation engine needs split.
 
-> [← back to the main README](../../README.md) · siblings: [`alphanumeric`](../alphanumeric/README.md) · [`phonology`](../phonology/README.md) · [`heuristics`](../heuristics/README.md)
+> [← back to the main README](../../README.md) · siblings: [`alphanumeric`](../alphanumeric/README.md) · [`phonology`](../phonology/README.md) · [`heuristics`](../heuristics/README.md) · [`asia`](../asia/README.md)
 
 ### `jamo.py` — positional jamo
 
