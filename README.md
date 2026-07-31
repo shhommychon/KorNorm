@@ -161,13 +161,14 @@ results = pipe(lines)
 
 ## Module guides
 
-The four packages each ship their own reference — every function they expose, what it does, and an example that was actually run through it:
+The five packages each ship their own reference — every function they expose, what it does, and an example that was actually run through it:
 
 | | |
 |---|---|
 | [`kornorm.alphanumeric`](kornorm/alphanumeric/README.md) | numbers, units, currencies, symbols, abbreviations and English words → hangul; the 14 steps of `dealers_choice`, usable one at a time, plus read-only `find_` twins that report matches without rewriting |
 | [`kornorm.phonology`](kornorm/phonology/README.md) | the 표준발음법 engine — rule-by-rule coverage, pipeline order, the 2D LUT, the dictionary-first pass, word-boundary policy |
 | [`kornorm.heuristics`](kornorm/heuristics/README.md) | pre-cleaning helpers — and their read-only finders — for text that came from somewhere real |
+| [`kornorm.asia`](kornorm/asia/README.md) | Japanese → hangul readings per the loanword transcription rules — kana by table, kanji readings via the optional `kornorm[ja]` extra |
 | [`kornorm.utils`](kornorm/utils/README.md) | positional-jamo primitives and the one-time pecab dictionary patch |
 
 ## Known limitations (alpha)
