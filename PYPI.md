@@ -60,6 +60,7 @@ What sets the G2P apart from existing libraries in the g2pK lineage:
 
 ## Changelog
 
+- **0.0.1b1** — added read-only finders that report `(start, end, match)` spans without touching the text, for profiling a corpus before deciding how to normalize it: `find_symbols` in `heuristics` (the twin of `purge_symbols`), and nine `find_` twins of the converters in `alphanumeric` (`find_units`, `find_currencies`, `find_phone_number`, `find_bound_numerals`, …), each guaranteed to detect exactly the inputs its converter would rewrite.
 - **0.0.0a2** — removed the `normalize` wrapper: compose the two layers yourself (`apply_phonology(dealers_choice(text), output_format="hangul")`). Fixed `output_format="hangul"` crashing on any non-hangul character (punctuation included) and bare `0` disappearing from numbers; numbers with a leading zero now read as codes (`007` → 공공칠). Added `pos()` (morphological tags as the engine sees them), `strip_punctuation`/`collapse_whitespace`, `find_text_degeneration`, regex targets for the symbol removers, and charge/energy compound units (`mAh`, `kWh`, `%p`, …).
 - **0.0.0a1** — first release.
 

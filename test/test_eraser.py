@@ -1,7 +1,8 @@
 import re
 import unittest
 from kornorm.heuristics.eraser import (
-    purge_symbols, remove_middle_symbols, strip_punctuation, collapse_whitespace
+    purge_symbols, remove_middle_symbols, find_symbols,
+    strip_punctuation, collapse_whitespace
 )
 
 class TestEraser(unittest.TestCase):
@@ -49,6 +50,33 @@ class TestEraser(unittest.TestCase):
         text = "웃음ㅋㅋ 정말ㅋㅋ 대박ㅋㅋ"
         targets = (re.compile("ㅋ+"),)
         self.assertEqual(remove_middle_symbols(text, targets), "웃음 정말 대박ㅋㅋ")
+
+    def test_find_symbols(self):
+        """대상 매치의 위치·문자열을 텍스트 무변경으로 보고하는지 테스트"""
+        text = "안~녕~하세요~~"
+        result = find_symbols(text, ('~',))
+        self.assertEqual(result, [(1, 2, '~'), (3, 4, '~'), (7, 8, '~'), (8, 9, '~')])
+        # 보고된 스팬을 원문에서 잘라내면 매치 문자열 그대로여야 함
+        for start, end, surface in result:
+            self.assertEqual(text[start:end], surface)
+
+        # 멀티 캐릭터 리터럴과 정규식 패턴 혼용
+        text = "잠시... [음악] 만요..."
+        result = find_symbols(text, ("...", re.compile(r"\[[^\]]+\]")))
+        self.assertEqual(result, [(2, 5, "..."), (6, 10, "[음악]"), (13, 16, "...")])
+
+        # 무매치 텍스트와 빈 텍스트는 빈 목록
+        self.assertEqual(find_symbols("정상 문장입니다", ('~', '!')), [])
+        self.assertEqual(find_symbols('', ('~',)), [])
+
+    def test_find_matches_purge(self):
+        """purge가 제거하는 입력과 find가 탐지하는 입력이 일치하는지 테스트"""
+        targets = ('~', "...", re.compile("ㅋ+"))
+        samples = ["안~녕", "Hello... World", "웃음ㅋㅋ 대박", "정상 문장입니다", '']
+        for sample in samples:
+            purged = (purge_symbols(sample, targets) != sample)
+            found = (find_symbols(sample, targets) != [])
+            self.assertEqual(purged, found, sample)
 
     def test_strip_punctuation(self):
         """기본 세트의 문장부호만 제거하고 의미 보유 기호는 남기는지 테스트"""

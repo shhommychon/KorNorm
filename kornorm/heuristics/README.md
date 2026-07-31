@@ -69,11 +69,25 @@ Same idea, except one trailing marker survives — the one that is usually carry
 
 Literal targets are matched longest-first, so overlapping targets (`"!!"` and `"!"`) behave predictably; patterns run after literals, in the order given.
 
+### `find_symbols` — detect without touching
+
+The read-only twin of `purge_symbols`: same targets interface (literals and compiled patterns, mixed freely), reporting every match as `(start, end, match)` tuples against the original text, sorted by position — `text[start:end] == match` holds for each. `purge(text, targets) != text` and `find(text, targets) != []` always agree. The one trailing marker `remove_middle_symbols` would preserve is still reported here.
+
+```pycon
+>>> from kornorm.heuristics import find_symbols
+>>> find_symbols("안~녕~하세요~~", '~')
+[(1, 2, '~'), (3, 4, '~'), (7, 8, '~'), (8, 9, '~')]
+>>> find_symbols("잠시... [음악] 만요...", ("...", re.compile(r"\[[^\]]+\]")))
+[(2, 5, '...'), (6, 10, '[음악]'), (13, 16, '...')]
+>>> find_symbols("정상 문장입니다", ('~', '!'))
+[]
+```
+
 ### `strip_punctuation` · `collapse_whitespace` — the pre-cleaning pair
 
 `strip_punctuation` is `purge_symbols` with batteries: a default set of sentence punctuation, brackets, quotes and dashes, exposed as composable constants (`SENTENCE_PUNCTUATION`, `BRACKET_PUNCTUATION`, `QUOTE_PUNCTUATION`, `DASH_PUNCTUATION`, and their union `DEFAULT_PUNCTUATION`). Deliberately **not** in the default set: the ASCII hyphen (phone numbers, ranges), the interpunct `·` (6·25 readings), and spoken symbols like `%` and `+` — those belong to [`alphanumeric`](../alphanumeric/README.md), not the eraser.
 
-`collapse_whitespace` squeezes runs of spaces and tabs down to one and trims the ends, leaving newlines alone (lines are the pipeline unit). It is itself a `strip_punctuation` call with a whitespace-run pattern as the target. The two chain naturally:
+`collapse_whitespace` squeezes runs of spaces and tabs down to one and trims the ends, leaving newlines alone (lines are the pipeline unit). It is itself a `purge_symbols` call with a whitespace-run pattern as the target. The two chain naturally:
 
 ```pycon
 >>> from kornorm.heuristics import strip_punctuation, collapse_whitespace

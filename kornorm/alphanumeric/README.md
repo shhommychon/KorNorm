@@ -1,6 +1,6 @@
 ## `kornorm.alphanumeric` — text normalization
 
-Everything in a Korean sentence that is not hangul yet: digits, units, currencies, symbols, abbreviations and English words. Every conversion is a standalone pure function (`str` → `str`) that can be used on its own, and `dealers_choice` is the house preset that runs them in an order that works.
+Everything in a Korean sentence that is not hangul yet: digits, units, currencies, symbols, abbreviations and English words. Every conversion is a standalone pure function (`str` → `str`) that can be used on its own, and `dealers_choice` is the house preset that runs them in an order that works. Nine converters also have read-only `find_` twins that report matches without rewriting anything ([Finders](#finders--detect-without-touching)).
 
 > [← back to the main README](../../README.md) · siblings: [`phonology`](../phonology/README.md) · [`heuristics`](../heuristics/README.md) · [`utils`](../utils/README.md)
 
@@ -69,6 +69,34 @@ The order is load-bearing in two places. Units run **before** the decimal point 
 | `read_special_symbols` | operators, punctuation-as-words and Greek letters | `"A+ 100%"` → `'A플러스 100퍼센트'`, `"α선"` → `'알파선'` |
 
 Multi-digit numbers are deliberately left out of `read_alphanum_combos`: `3M` is a letter block (쓰리엠), but `220V` should be read as a numeral plus a letter (이백이십븨), so only a single leading digit triggers the block reading.
+
+### Finders — detect without touching
+
+Nine converters have read-only `find_` twins that report exactly what the converter would rewrite, as `(start, end, match)` tuples against the original text — `text[start:end] == match` holds for each, and `read_X(text) != text` and `find_X(text) != []` always agree. Use them to profile a corpus before deciding which normalization steps it actually needs:
+
+```pycon
+>>> from kornorm.alphanumeric import find_units, find_bound_numerals, find_time_format
+>>> find_units("배터리 3400mAh 용량과 30km 구간")
+[(4, 11, '3400mAh'), (16, 20, '30km')]
+>>> find_bound_numerals("커피 3잔과 장갑 3켤레")
+[(3, 5, '3잔'), (10, 13, '3켤레')]
+>>> find_time_format("회의는 9:30, 종료는 11:00")
+[(4, 8, '9:30'), (14, 19, '11:00')]
+```
+
+| Finder | Twin of |
+|---|---|
+| `find_currencies` | `read_currencies` |
+| `find_unit_exceptions` | `read_unit_exceptions` |
+| `find_units` | `read_units` |
+| `find_special_symbols` | `read_special_symbols` |
+| `find_phone_number` | `read_phone_number` |
+| `find_date_format` | `read_date_format` |
+| `find_time_format` | `read_time_format` |
+| `find_interpunct_digits` | `read_interpunct_digits` |
+| `find_bound_numerals` | `convert_bound_numerals` |
+
+Each finder mirrors its converter **run standalone** — the `dealers_choice` pipeline order is not simulated. `find_units("3.5GHz")` reports `(2, 6, '5GHz')`, exactly the span `read_units` rewrites on that raw string. One deliberate touch-up: `find_phone_number` trims the leading separator whitespace its pattern consumes, so the reported span starts at the number itself. Conversions that a plain regex already finds (digit runs, decimal points, all-caps abbreviations, letter+digit combos) deliberately ship no finder.
 
 ### English words — `english.py`
 
