@@ -2,7 +2,7 @@
 
 Small, opt-in helpers for text that came from somewhere real — chat logs, subtitle files, ASR output, a language model that got stuck in a loop. Nothing here is part of `dealers_choice`; you reach for these when your corpus needs them, usually as the first stage of a [pipeline](../../README.md#pipelines--corpus-scale-processing).
 
-> [← back to the main README](../../README.md) · siblings: [`alphanumeric`](../alphanumeric/README.md) · [`phonology`](../phonology/README.md) · [`utils`](../utils/README.md)
+> [← back to the main README](../../README.md) · siblings: [`alphanumeric`](../alphanumeric/README.md) · [`phonology`](../phonology/README.md) · [`asia`](../asia/README.md) · [`utils`](../utils/README.md)
 
 ### `fix_text_degeneration` — collapse runaway repetitions
 

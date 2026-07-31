@@ -2,7 +2,7 @@
 
 Everything in a Korean sentence that is not hangul yet: digits, units, currencies, symbols, abbreviations and English words. Every conversion is a standalone pure function (`str` → `str`) that can be used on its own, and `dealers_choice` is the house preset that runs them in an order that works. Nine converters also have read-only `find_` twins that report matches without rewriting anything ([Finders](#finders--detect-without-touching)).
 
-> [← back to the main README](../../README.md) · siblings: [`phonology`](../phonology/README.md) · [`heuristics`](../heuristics/README.md) · [`utils`](../utils/README.md)
+> [← back to the main README](../../README.md) · siblings: [`phonology`](../phonology/README.md) · [`heuristics`](../heuristics/README.md) · [`asia`](../asia/README.md) · [`utils`](../utils/README.md)
 
 ### The preset — `dealers_choice`
 
@@ -48,7 +48,7 @@ The order is load-bearing in two places. Units run **before** the decimal point 
 | Function | Does | Example |
 |---|---|---|
 | `remove_commas` | drops `,` between digit groups only | `"45,000원"` → `'45000원'` |
-| `read_phone_number` | reads digits one by one, drops the separators; `0` is 공 by default | `"010-1234-5678"` → `'공일공일이삼사오육칠팔'` |
+| `read_phone_number` | reads digits one by one, drops the separators (a leading space is a word boundary, not a separator — it stays); `0` is 공 by default | `"010-1234-5678"` → `'공일공일이삼사오육칠팔'` |
 | `read_date_format` | `YYYY.MM.DD` / `-` / `/` → 년 월 일, leading zeros dropped | `"1950-06-25 발발"` → `'1950년 6월 25일 발발'` |
 | `read_time_format` | `HH:MM[:SS]` → 시 분 초 | `"1:02:03"` → `'1시 2분 3초'` |
 | `read_decimal_point` | fraction digits read one by one | `"3.14"` → `'3 쩜 일사'` |
@@ -96,7 +96,7 @@ Nine converters have read-only `find_` twins that report exactly what the conver
 | `find_interpunct_digits` | `read_interpunct_digits` |
 | `find_bound_numerals` | `convert_bound_numerals` |
 
-Each finder mirrors its converter **run standalone** — the `dealers_choice` pipeline order is not simulated. `find_units("3.5GHz")` reports `(2, 6, '5GHz')`, exactly the span `read_units` rewrites on that raw string. One deliberate touch-up: `find_phone_number` trims the leading separator whitespace its pattern consumes, so the reported span starts at the number itself. Conversions that a plain regex already finds (digit runs, decimal points, all-caps abbreviations, letter+digit combos) deliberately ship no finder.
+Each finder mirrors its converter **run standalone** — the `dealers_choice` pipeline order is not simulated. `find_units("3.5GHz")` reports `(2, 6, '5GHz')`, exactly the span `read_units` rewrites on that raw string. One deliberate touch-up: `find_phone_number` trims the leading whitespace its pattern consumes, so the reported span starts at the number itself (`read_phone_number` likewise keeps that space instead of swallowing it). Conversions that a plain regex already finds (digit runs, decimal points, all-caps abbreviations, letter+digit combos) deliberately ship no finder.
 
 ### English words — `english.py`
 

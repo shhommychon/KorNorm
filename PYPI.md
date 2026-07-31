@@ -60,13 +60,14 @@ What sets the G2P apart from existing libraries in the g2pK lineage:
 
 ## Changelog
 
+- **0.0.1b2** — added `kornorm.asia` with `read_japanese`: Japanese text → hangul the way a Korean speaker would say it, per the official loanword transcription rules (도쿄, 삿포로, 라멘). Kana converts with no extra install; kanji readings and particle pronunciations (は as 와) come from the optional [janome](https://github.com/mocobeta/janome) analyzer — `pip install kornorm[ja]` (or `kornorm[all]`). Also fixed `read_phone_number` swallowing the space in front of a phone number: a leading space is a word boundary and now stays, while separators inside the number still drop.
 - **0.0.1b1** — added read-only finders that report `(start, end, match)` spans without touching the text, for profiling a corpus before deciding how to normalize it: `find_symbols` in `heuristics` (the twin of `purge_symbols`), and nine `find_` twins of the converters in `alphanumeric` (`find_units`, `find_currencies`, `find_phone_number`, `find_bound_numerals`, …), each guaranteed to detect exactly the inputs its converter would rewrite.
 - **0.0.0a2** — removed the `normalize` wrapper: compose the two layers yourself (`apply_phonology(dealers_choice(text), output_format="hangul")`). Fixed `output_format="hangul"` crashing on any non-hangul character (punctuation included) and bare `0` disappearing from numbers; numbers with a leading zero now read as codes (`007` → 공공칠). Added `pos()` (morphological tags as the engine sees them), `strip_punctuation`/`collapse_whitespace`, `find_text_degeneration`, regex targets for the symbol removers, and charge/energy compound units (`mAh`, `kWh`, `%p`, …).
 - **0.0.0a1** — first release.
 
 ## Credits
 
-Built on the shoulders of: 표준국어대사전 (National Institute of Korean Language), [pecab](https://github.com/hyunwoongko/pecab) by Hyunwoong Ko, [g2pK](https://github.com/Kyubyong/g2pK) by Kyubyong Park and its descendants, [python-jamo](https://github.com/jdongian/python-jamo) by Joshua Dong, and the [CMU Pronouncing Dictionary](https://github.com/cmusphinx/cmudict). See the [repository](https://github.com/shhommychon/KorNorm) for the full lineage.
+Built on the shoulders of: 표준국어대사전 (National Institute of Korean Language), [pecab](https://github.com/hyunwoongko/pecab) by Hyunwoong Ko, [g2pK](https://github.com/Kyubyong/g2pK) by Kyubyong Park and its descendants, [python-jamo](https://github.com/jdongian/python-jamo) by Joshua Dong, the [CMU Pronouncing Dictionary](https://github.com/cmusphinx/cmudict), and [janome](https://github.com/mocobeta/janome) by Tomoko Uchida (the optional Japanese analyzer). See the [repository](https://github.com/shhommychon/KorNorm) for the full lineage.
 
 ## License
 

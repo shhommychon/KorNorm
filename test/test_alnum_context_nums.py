@@ -15,6 +15,14 @@ class TestContextualNumbers(unittest.TestCase):
         self.assertEqual(read_phone_number("010-1234-5678"), "공일공일이삼사오육칠팔")
         self.assertEqual(read_phone_number("02-1588-1111"), "공이일오팔팔일일일일")
 
+    def test_read_phone_number_keeps_leading_space(self):
+        """패턴이 선행 구분자로 소비하는 공백을 지우지 않고 보존하는지 테스트"""
+        self.assertEqual(
+            read_phone_number("내 폰번호는 010-1234-5678이야"),
+            "내 폰번호는 공일공일이삼사오육칠팔이야",
+        )
+        self.assertEqual(read_phone_number("A 010-1234-5678 B"), "A 공일공일이삼사오육칠팔 B")
+
     def test_read_date_format(self):
         """날짜 패턴(YYYY.MM.DD)을 한글로 변환하는지 테스트"""
         self.assertEqual(read_date_format("2023.10.05"), "2023년 10월 5일")

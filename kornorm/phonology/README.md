@@ -2,7 +2,7 @@
 
 A rule-by-rule implementation of 표준발음법 (the Standard Korean Pronunciation rules, National Institute of Korean Language) on top of morphological analysis, with lexical pronunciations from 표준국어대사전 applied before any rule runs. No regex table to maintain, no hand-written exception list.
 
-> [← back to the main README](../../README.md) · siblings: [`alphanumeric`](../alphanumeric/README.md) · [`heuristics`](../heuristics/README.md) · [`utils`](../utils/README.md)
+> [← back to the main README](../../README.md) · siblings: [`alphanumeric`](../alphanumeric/README.md) · [`heuristics`](../heuristics/README.md) · [`asia`](../asia/README.md) · [`utils`](../utils/README.md)
 
 ### Entry points
 

@@ -45,19 +45,23 @@ def remove_commas(text: str) -> str:
 def read_phone_number(text: str, zero_char: str = "공", digit_map: dict = SINO_DIGITS) -> str:
     """
     전화번호 패턴을 감지하여 숫자를 개별적으로 변환하고 구분 기호를 제거합니다.
-    
+
+    패턴이 선행 구분자로 소비하는 공백("번호는 010-…"의 앞 공백)은 구분 기호가
+    아니라 어절 경계이므로 지우지 않고 보존합니다.
+
     Args:
         text (str): 원본 텍스트.
         zero_char (str): 숫자 '0'을 읽을 방식 (기본값: "공").
         digit_map (dict): 숫자별 한자어 매핑 사전.
-        
+
     Returns:
         str: 전화번호가 한글 발음으로 변환된 텍스트.
     """
     def _repl(m):
         raw = m.group(0)
+        prefix = raw[:len(raw) - len(raw.lstrip())]
         digits = [c for c in raw if c.isdigit()]
-        return "".join(digit_map.get(d, d) if d != '0' else zero_char for d in digits)
+        return prefix + "".join(digit_map.get(d, d) if d != '0' else zero_char for d in digits)
     return RE_PHONE.sub(_repl, text)
 
 def find_phone_number(text: str) -> List[Tuple[int, int, str]]:
@@ -67,7 +71,7 @@ def find_phone_number(text: str) -> List[Tuple[int, int, str]]:
     read_phone_number가 단독 실행으로 치환하는 바로 그 매치들을 돌려주는 조회 전용
     짝꿍입니다. read(text) != text와 find(text) != [] 는 동치입니다. 패턴이 선행
     구분자로 소비하는 공백은 보고 스팬에서 잘라내고 번호 시작 위치를 돌려줍니다
-    (컨버터 치환은 그 공백까지 소비 — 탐지 결과만 다듬는 것이라 동치는 유지됩니다).
+    (read_phone_number도 그 공백은 지우지 않고 보존 — 양쪽 다 번호만 대상입니다).
 
     Args:
         text (str): 검사할 원본 텍스트.
