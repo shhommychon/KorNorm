@@ -3,11 +3,28 @@
 # 날짜, 시간, 전화번호 등 숫자가 포함된 문맥을 개별 함수로 정규화합니다.
 
 
+import re
+from typing import List, Tuple
+
 from kornorm.alphanumeric.constants import (
     SINO_DIGITS, RE_COMMAS, RE_DATE, RE_TIME, RE_PHONE, RE_FLOAT, RE_BOUND_NUM, RE_SINO_NUM,
     RE_INTERPUNCT_NUM,
 )
 from kornorm.alphanumeric.base import num_to_sino, num_to_native
+
+
+def _find_pattern_matches(pattern: re.Pattern, text: str) -> List[Tuple[int, int, str]]:
+    """
+    컴파일된 패턴의 모든 매치를 (시작, 끝, 매치 문자열)로 수집합니다.
+
+    Args:
+        pattern (re.Pattern): 대응 컨버터가 치환에 쓰는 바로 그 패턴.
+        text (str): 검사할 원본 텍스트.
+
+    Returns:
+        List[Tuple[int, int, str]]: 매치별 (시작, 끝, 매치 문자열) 목록 (시작 위치순).
+    """
+    return [(m.start(), m.end(), m.group(0)) for m in pattern.finditer(text)]
 
 
 def remove_commas(text: str) -> str:
@@ -43,6 +60,29 @@ def read_phone_number(text: str, zero_char: str = "공", digit_map: dict = SINO_
         return "".join(digit_map.get(d, d) if d != '0' else zero_char for d in digits)
     return RE_PHONE.sub(_repl, text)
 
+def find_phone_number(text: str) -> List[Tuple[int, int, str]]:
+    """
+    전화번호 패턴 매치를 텍스트 무변경으로 위치와 함께 보고합니다.
+
+    read_phone_number가 단독 실행으로 치환하는 바로 그 매치들을 돌려주는 조회 전용
+    짝꿍입니다. read(text) != text와 find(text) != [] 는 동치입니다. 패턴이 선행
+    구분자로 소비하는 공백은 보고 스팬에서 잘라내고 번호 시작 위치를 돌려줍니다
+    (컨버터 치환은 그 공백까지 소비 — 탐지 결과만 다듬는 것이라 동치는 유지됩니다).
+
+    Args:
+        text (str): 검사할 원본 텍스트.
+
+    Returns:
+        List[Tuple[int, int, str]]: 매치별 (시작, 끝, 매치 문자열) 목록 (시작 위치순).
+    """
+    results = []
+    for match in RE_PHONE.finditer(text):
+        surface = match.group(0)
+        stripped = surface.lstrip()
+        start = match.start() + (len(surface) - len(stripped))
+        results.append((start, match.end(), stripped))
+    return results
+
 def read_date_format(text: str) -> str:
     """
     날짜 형식(YYYY.MM.DD 등)을 '년, 월, 일' 형식의 한글로 통일합니다.
@@ -57,6 +97,21 @@ def read_date_format(text: str) -> str:
         str: 날짜가 한글 포맷으로 변환된 텍스트.
     """
     return RE_DATE.sub(lambda m: f"{m.group(1)}년 {int(m.group(2))}월 {int(m.group(3))}일", text)
+
+def find_date_format(text: str) -> List[Tuple[int, int, str]]:
+    """
+    날짜 형식(YYYY.MM.DD 등) 매치를 텍스트 무변경으로 위치와 함께 보고합니다.
+
+    read_date_format이 단독 실행으로 치환하는 바로 그 매치들을 돌려주는 조회 전용
+    짝꿍입니다. read(text) != text와 find(text) != [] 는 동치입니다.
+
+    Args:
+        text (str): 검사할 원본 텍스트.
+
+    Returns:
+        List[Tuple[int, int, str]]: 매치별 (시작, 끝, 매치 문자열) 목록 (시작 위치순).
+    """
+    return _find_pattern_matches(RE_DATE, text)
 
 def read_time_format(text: str) -> str:
     """
@@ -78,6 +133,21 @@ def read_time_format(text: str) -> str:
             res += f" {int(s)}초"
         return res
     return RE_TIME.sub(_repl, text)
+
+def find_time_format(text: str) -> List[Tuple[int, int, str]]:
+    """
+    시간 형식(HH:MM:SS 등) 매치를 텍스트 무변경으로 위치와 함께 보고합니다.
+
+    read_time_format이 단독 실행으로 치환하는 바로 그 매치들을 돌려주는 조회 전용
+    짝꿍입니다. read(text) != text와 find(text) != [] 는 동치입니다.
+
+    Args:
+        text (str): 검사할 원본 텍스트.
+
+    Returns:
+        List[Tuple[int, int, str]]: 매치별 (시작, 끝, 매치 문자열) 목록 (시작 위치순).
+    """
+    return _find_pattern_matches(RE_TIME, text)
 
 def read_decimal_point(text: str, point_char: str = " 쩜 ", digit_map: dict = SINO_DIGITS) -> str:
     """
@@ -119,6 +189,21 @@ def read_interpunct_digits(text: str, digit_map: dict = SINO_DIGITS) -> str:
         text,
     )
 
+def find_interpunct_digits(text: str) -> List[Tuple[int, int, str]]:
+    """
+    가운뎃점으로 묶인 숫자 표기(6·25, 3·1절) 매치를 텍스트 무변경으로 보고합니다.
+
+    read_interpunct_digits가 단독 실행으로 치환하는 바로 그 매치들을 돌려주는 조회
+    전용 짝꿍입니다. read(text) != text와 find(text) != [] 는 동치입니다.
+
+    Args:
+        text (str): 검사할 원본 텍스트.
+
+    Returns:
+        List[Tuple[int, int, str]]: 매치별 (시작, 끝, 매치 문자열) 목록 (시작 위치순).
+    """
+    return _find_pattern_matches(RE_INTERPUNCT_NUM, text)
+
 def convert_bound_numerals(text: str) -> str:
     """
     단위 명사(분류사)가 결합된 숫자를 고유어 수사로 치환합니다.
@@ -133,6 +218,22 @@ def convert_bound_numerals(text: str) -> str:
         str: 단위 결합 숫자가 정규화된 텍스트.
     """
     return RE_BOUND_NUM.sub(lambda m: num_to_native(m.group(1)) + m.group(2), text)
+
+def find_bound_numerals(text: str) -> List[Tuple[int, int, str]]:
+    """
+    단위 명사(분류사)가 결합된 숫자 수사 매치를 텍스트 무변경으로 보고합니다.
+
+    convert_bound_numerals가 단독 실행으로 치환하는 바로 그 매치들을 돌려주는 조회
+    전용 짝꿍입니다. convert(text) != text와 find(text) != [] 는 동치이며,
+    dealers_choice 파이프라인 순서 문맥은 반영하지 않습니다.
+
+    Args:
+        text (str): 검사할 원본 텍스트.
+
+    Returns:
+        List[Tuple[int, int, str]]: 매치별 (시작, 끝, 매치 문자열) 목록 (시작 위치순).
+    """
+    return _find_pattern_matches(RE_BOUND_NUM, text)
 
 def convert_standalone_numerals(text: str) -> str:
     """
