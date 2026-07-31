@@ -122,8 +122,6 @@ processor("독립문", output_format="hangul")  # '동님문'
 
 ### Pipelines — corpus-scale processing
 
-<img src=".assets/image/kornorm_fullbody_tall.png" alt="StreamPipeline" align="right" width="200">
-
 Both pipelines take any `str` → `str` function. Define your recipe once, at module top level (that keeps it picklable for multiprocessing):
 
 ```python
@@ -132,6 +130,8 @@ from kornorm import dealers_choice, apply_phonology
 def preprocess(line: str) -> str:
     return apply_phonology(dealers_choice(line), output_format="hangul")
 ```
+
+<img src=".assets/image/kornorm_fullbody_tall.png" alt="StreamPipeline" align="right" width="200">
 
 **`StreamPipeline`** sweeps through your corpus one line at a time — a lazy generator with minimal memory footprint, for when the file is bigger than your RAM:
 
@@ -165,9 +165,9 @@ The four packages each ship their own reference — every function they expose, 
 
 | | |
 |---|---|
-| [`kornorm.alphanumeric`](kornorm/alphanumeric/README.md) | numbers, units, currencies, symbols, abbreviations and English words → hangul; the 14 steps of `dealers_choice` and how to use them one at a time |
+| [`kornorm.alphanumeric`](kornorm/alphanumeric/README.md) | numbers, units, currencies, symbols, abbreviations and English words → hangul; the 14 steps of `dealers_choice`, usable one at a time, plus read-only `find_` twins that report matches without rewriting |
 | [`kornorm.phonology`](kornorm/phonology/README.md) | the 표준발음법 engine — rule-by-rule coverage, pipeline order, the 2D LUT, the dictionary-first pass, word-boundary policy |
-| [`kornorm.heuristics`](kornorm/heuristics/README.md) | pre-cleaning helpers for text that came from somewhere real |
+| [`kornorm.heuristics`](kornorm/heuristics/README.md) | pre-cleaning helpers — and their read-only finders — for text that came from somewhere real |
 | [`kornorm.utils`](kornorm/utils/README.md) | positional-jamo primitives and the one-time pecab dictionary patch |
 
 ## Known limitations (alpha)
