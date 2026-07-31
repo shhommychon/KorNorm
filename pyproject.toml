@@ -24,6 +24,10 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+ja = ["janome"]     # 일본어 한자 독음 (kornorm.asia.read_japanese)
+all = ["janome"]    # 선택 의존성 전부
+
 [project.urls]
 Repository = "https://github.com/shhommychon/KorNorm"
 Issues = "https://github.com/shhommychon/KorNorm/issues"
