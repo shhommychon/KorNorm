@@ -4,7 +4,7 @@
 # 단순 삭제와 문장 끝 강조 표현 보존 기능을 제공합니다.
 
 import re
-from typing import Iterable, Union
+from typing import Iterable, List, Tuple, Union
 
 
 # 문장부호 제거용 기본 세트 (분류별 튜플 — 필요한 분류만 골라 조합할 수 있습니다)
@@ -96,6 +96,38 @@ def remove_middle_symbols(text: str, targets: Iterable[Union[str, re.Pattern]]) 
 
     return prefix + suffix
 
+def find_symbols(
+    text: str, targets: Iterable[Union[str, re.Pattern]]
+) -> List[Tuple[int, int, str]]:
+    """
+    텍스트 내의 대상(targets) 매치를 위치와 함께 보고합니다.
+
+    purge_symbols가 제거하는 바로 그 대상들을 텍스트 무변경으로 돌려주는 조회 전용
+    짝꿍입니다. purge(text, targets) != text와 find(text, targets) != [] 는 동치입니다.
+    remove_middle_symbols가 보존하는 문장 끝 1개도 여기서는 매치로 포함됩니다.
+
+    Args:
+        text (str): 검사할 원본 텍스트.
+        targets (Iterable[str | re.Pattern]): 탐지할 대상들의 모음.
+            리터럴 문자열과 컴파일된 정규식 패턴을 섞어 넘길 수 있습니다.
+
+    Returns:
+        List[Tuple[int, int, str]]: 매치별 (시작, 끝, 매치 문자열) 목록.
+            시작 위치순으로 정렬되며, text[시작:끝] == 매치 문자열이 성립합니다.
+    """
+    results = []
+    for target in targets:
+        if isinstance(target, re.Pattern):
+            for match in target.finditer(text):
+                if match.group():
+                    results.append((match.start(), match.end(), match.group()))
+        elif target:
+            start = text.find(target)
+            while start != -1:
+                results.append((start, start + len(target), target))
+                start = text.find(target, start + len(target))
+    return sorted(results)
+
 def strip_punctuation(text: str, targets: Iterable[Union[str, re.Pattern]] = DEFAULT_PUNCTUATION) -> str:
     """
     문장부호를 제거합니다. 기본 세트는 문장부호·괄호·인용부호·줄표입니다.
@@ -126,4 +158,4 @@ def collapse_whitespace(text: str) -> str:
     Returns:
         str: 공백이 정돈된 텍스트.
     """
-    return strip_punctuation(text, targets=(_RE_REDUNDANT_WHITESPACE,)).strip(" \t")
+    return purge_symbols(text, (_RE_REDUNDANT_WHITESPACE,)).strip(" \t")
